@@ -12,7 +12,6 @@ import icBuy from './assets/btn-buy.svg'
 import icSell from './assets/btn-sell.svg'
 import icPlant from './assets/btn-plant.svg'
 import icWash from './assets/btn-wash.svg'
-
 import radish from './assets/radish.svg'
 import carrot from './assets/carrot.svg'
 import cabbage from './assets/cabbage.svg'
@@ -34,22 +33,38 @@ const seedIcons: Record<string,string> = {
 } as any
 
 export default function App(){
-  const [token, setTok] = React.useState<string|null>(getStoredToken())
+  const storedToken = getStoredToken()
+  const [token, setTok] = React.useState<string|null>(storedToken)
   const [active, setActive] = React.useState<Tab>('Профиль')
   const [toast, setToast] = React.useState<string|null>(null)
+  const [showAuth, setShowAuth] = React.useState(!storedToken)
+  const [authMode, setAuthMode] = React.useState<'login'|'register'>('login')
 
   React.useEffect(()=>{ setToken(token) },[token])
-  const logout=()=>{ localStorage.removeItem('token'); setTok(null); setActive('Профиль') }
+  React.useEffect(()=>{
+    if(!token){
+      setShowAuth(true)
+      setAuthMode('login')
+    }
+  },[token])
+  const logout=()=>{
+    localStorage.removeItem('token')
+    setTok(null)
+    setActive('Профиль')
+  }
   const show=(m:string)=>{ setToast(m); setTimeout(()=>setToast(null), 2500) }
 
-  if(!token){
-    return <div className='app auth-app'>
-      <AuthPage
-        onLoginSuccess={(t)=>{ show('Вход выполнен'); saveToken(t); setTok(t) }}
-        onRegisterSuccess={(t)=>{ show('Регистрация произошла успешно'); saveToken(t); setTok(t) }}
-      />
-      {toast? <div className="toast">{toast}</div>: null}
-    </div>
+  const handleLoginSuccess=(t:string)=>{
+    show('Вход выполнен')
+    saveToken(t)
+    setTok(t)
+    setShowAuth(false)
+  }
+  const handleRegisterSuccess=(t:string)=>{
+    show('Регистрация произошла успешно')
+    saveToken(t)
+    setTok(t)
+    setShowAuth(false)
   }
 
   const tabs: {k:Tab; icon:string}[] = [
@@ -60,21 +75,30 @@ export default function App(){
   ]
 
   return <div className='app'>
-    <Header onLogout={logout}/>
-    <div className='tabs'>
-      {tabs.map(t=>
-        <button key={t.k} className={'tab '+(active===t.k?'active':'')} onClick={()=>setActive(t.k)}>
-          <img src={t.icon} alt="" /> {t.k}
-        </button>
-      )}
-    </div>
-    <div style={{padding:20}}>
-      {active==='Профиль'? <Profile onToast={show}/>:
-        active==='Магазин'? <Shop onToast={show} seedIcons={seedIcons}/>:
-        active==='Грядка'? <Garden onToast={show} seedIcons={seedIcons}/>:
-        <Inventory onToast={show} seedIcons={seedIcons}/>
-      }
-    </div>
+    {token? <>
+      <Header onLogout={logout}/>
+      <div className='tabs'>
+        {tabs.map(t=>
+          <button key={t.k} className={'tab '+(active===t.k?'active':'')} onClick={()=>setActive(t.k)}>
+            <img src={t.icon} alt="" /> {t.k}
+          </button>
+        )}
+      </div>
+      <div style={{padding:20}}>
+        {active==='Профиль'? <Profile onToast={show}/>:
+          active==='Магазин'? <Shop onToast={show} seedIcons={seedIcons}/>:
+          active==='Грядка'? <Garden onToast={show} seedIcons={seedIcons}/>:
+          <Inventory onToast={show} seedIcons={seedIcons}/>
+        }
+      </div>
+    </>:null}
+    {showAuth?
+      <AuthModal
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onLoginSuccess={handleLoginSuccess}
+        onRegisterSuccess={handleRegisterSuccess}
+      />:null}
     {toast? <div className="toast">{toast}</div>: null}
   </div>
 }
@@ -98,17 +122,12 @@ function InputField({label,type='text',value,onChange,error}:{label:string;type?
 }
 
 // === Auth page ===
-function AuthPage({onLoginSuccess,onRegisterSuccess}:{onLoginSuccess:(t:string)=>void;onRegisterSuccess:(t:string)=>void}){
-  const [mode,setMode] = React.useState<'login'|'register'>('login')
-  return <div className='auth-page'>
-    <div className='card auth-card'>
-      <div className='auth-toggle'>
-        <button type='button' className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Вход</button>
-        <button type='button' className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Регистрация</button>
-      </div>
+function AuthModal({mode,onModeChange,onLoginSuccess,onRegisterSuccess}:{mode:'login'|'register';onModeChange:(m:'login'|'register')=>void;onLoginSuccess:(t:string)=>void;onRegisterSuccess:(t:string)=>void}){
+  return <div className='modal-backdrop auth-overlay'>
+    <div className='card modal auth-modal'>
       {mode==='login'?
-        <LoginForm onSuccess={onLoginSuccess} onSwitchToRegister={()=>setMode('register')}/>:
-        <RegisterForm onSuccess={(t)=>{ onRegisterSuccess(t); setMode('login') }} onSwitchToLogin={()=>setMode('login')}/>
+        <LoginForm onSuccess={onLoginSuccess} onSwitchToRegister={()=>onModeChange('register')}/>:
+        <RegisterForm onSuccess={onRegisterSuccess} onSwitchToLogin={()=>onModeChange('login')}/>
       }
     </div>
   </div>
@@ -135,8 +154,11 @@ function LoginForm({onSuccess,onSwitchToRegister}:{onSuccess:(t:string)=>void;on
       <InputField label='Email' value={email} onChange={setEmail} error={errEmail}/>
       <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPass}/>
     </div>
-    <div className='row auth-footer'>
-      <button className='auth-link' onClick={onSwitchToRegister}>Создать аккаунт</button>
+    <div className='auth-controls'>
+      <div className='auth-alt'>
+        <span className='auth-question'>Нет аккаунта?</span>
+        <button type='button' className='auth-secondary' onClick={onSwitchToRegister}>Зарегистрироваться</button>
+      </div>
       <button className='btn' onClick={submit}>Войти</button>
     </div>
   </div>
@@ -169,8 +191,11 @@ function RegisterForm({onSuccess,onSwitchToLogin}:{onSuccess:(t:string)=>void;on
       <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errP}/>
       <InputField label='Подтверждение пароля' type='password' value={pass2} onChange={setPass2} error={errP2}/>
     </div>
-    <div className='row auth-footer'>
-      <button className='auth-link' onClick={onSwitchToLogin}>У меня уже есть аккаунт</button>
+    <div className='auth-controls'>
+      <div className='auth-alt'>
+        <span className='auth-question'>Уже есть аккаунт?</span>
+        <button type='button' className='auth-secondary' onClick={onSwitchToLogin}>Войти</button>
+      </div>
       <button className='btn' onClick={submit}>Зарегистрироваться</button>
     </div>
   </div>
@@ -227,7 +252,6 @@ function Profile({onToast}:{onToast:(m:string)=>void}){
       </div>}
       <div className='row' style={{justifyContent:'flex-end', marginTop:12}}>
         <button className='btn' onClick={save}>Сохранить</button>
-        <button className='btn secondary' onClick={()=>{ /* back */ }}>Назад</button>
       </div>
     </div>
   </div>
@@ -256,9 +280,6 @@ function Shop({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any}){
     <div className='row' style={{gap:8}}>
       <button className={'tab '+(sub==='Покупка'?'active':'')} onClick={()=>setSub('Покупка')}><img src={icBuy}/>&nbsp;Покупка</button>
       <button className={'tab '+(sub==='Продажа'?'active':'')} onClick={()=>setSub('Продажа')}><img src={icSell}/>&nbsp;Продажа</button>
-      <div style={{marginLeft:'auto'}}>
-        <button className='btn secondary' onClick={()=>{ }}>Назад</button>
-      </div>
     </div>
 
     {sub==='Покупка'? <div className='grid'>
@@ -291,7 +312,6 @@ function Shop({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any}){
           </div>
         )
       }
-      <div style={{fontSize:12,opacity:.8}}>Цены продажи: базовые — {prices.sale.basePrice} ₽, продвинутые — {prices.sale.advPrice} ₽ (настраивается на бэкенде)</div>
     </div>}
   </div>
 }
@@ -303,9 +323,6 @@ function Inventory({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any
   const wash=async(id:number)=>{ await api.patch(`/inventory/wash/${id}`); onToast('Овощ помыт'); load() }
 
   return <div className='grid'>
-    <div className='row' style={{justifyContent:'flex-end'}}>
-      <button className='btn secondary' onClick={()=>{}}>Назад</button>
-    </div>
     <div className='grid grid-3'>
       <div className='card'>
         <h3>Семена</h3>
@@ -366,9 +383,6 @@ function Garden({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any}){
   }
 
   return <div className='grid'>
-    <div className='row' style={{justifyContent:'flex-end'}}>
-      <button className='btn secondary' onClick={()=>{}}>Назад</button>
-    </div>
     <div className='grid grid-3'>
       {plots.map(p=>
         <div key={p.slot} className='slot card'>
