@@ -33,20 +33,13 @@ const GROWTH_MINUTES      = parseInt(process.env.GROWTH_MINUTES || '10',10);
 let openapi;
 try {
   const openapiFileUrl = new URL('../openapi.yaml', import.meta.url);
-<<<<<<< HEAD
-  const openapiRaw = fs.readFileSync(openapiFileUrl, 'utf-8');
-=======
   const openapiPath = fileURLToPath(openapiFileUrl);
   const openapiRaw = fs.readFileSync(openapiPath, 'utf-8');
->>>>>>> 41ae06b (мои правки)
   openapi = YAML.parse(openapiRaw);
 } catch (error) {
   console.error('Failed to load OpenAPI specification:', error);
 }
 if (openapi) {
-<<<<<<< HEAD
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi));
-=======
   app.get('/api/docs/openapi.json', (_req, res) => {
     res.json(openapi);
   });
@@ -59,7 +52,6 @@ if (openapi) {
       }
     })
   );
->>>>>>> 41ae06b (мои правки)
 }
 
 // Helpers
@@ -277,14 +269,7 @@ app.post('/api/garden/harvest', auth, async (req,res)=>{
   if (!plot || !plot.type || plot.harvested) return res.status(400).json({ error:'Ошибка валидации' });
   if (!matured(plot.planted_at)) return res.status(400).json({ error:'Ошибка валидации' });
 
-<<<<<<< HEAD
   await pool.query('UPDATE plots SET harvested=1, type=NULL, planted_at=NULL WHERE user_id=? AND slot=?',[req.user.id, slot]);
-=======
-  await pool.query(
-  'UPDATE plots SET harvested=?, type=?, planted_at=? WHERE user_id=? AND slot=?',
-   [0, null, null, req.user.id, slot]
-  );
->>>>>>> 41ae06b (мои правки)
   await pool.query('INSERT INTO inventory (user_id, kind, type, status) VALUES (?,?,?,?)',[req.user.id,'veg_raw',plot.type,'harvested']);
   res.json({ ok:true });
 });
