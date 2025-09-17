@@ -29,8 +29,17 @@ const GARDEN_SLOTS        = parseInt(process.env.GARDEN_SLOTS || '6',10);
 const GROWTH_MINUTES      = parseInt(process.env.GROWTH_MINUTES || '10',10);
 
 // Swagger
-const openapi = YAML.parse(fs.readFileSync('/app/openapi.yaml','utf-8'));
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi));
+let openapi;
+try {
+  const openapiFileUrl = new URL('../openapi.yaml', import.meta.url);
+  const openapiRaw = fs.readFileSync(openapiFileUrl, 'utf-8');
+  openapi = YAML.parse(openapiRaw);
+} catch (error) {
+  console.error('Failed to load OpenAPI specification:', error);
+}
+if (openapi) {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi));
+}
 
 // Helpers
 function signToken(user){
@@ -247,7 +256,7 @@ app.post('/api/garden/harvest', auth, async (req,res)=>{
   if (!plot || !plot.type || plot.harvested) return res.status(400).json({ error:'Ошибка валидации' });
   if (!matured(plot.planted_at)) return res.status(400).json({ error:'Ошибка валидации' });
 
-  await pool.query('UPDATE plots SET harvested=1 WHERE user_id=? AND slot=?',[req.user.id, slot]);
+  await pool.query('UPDATE plots SET harvested=1, type=NULL, planted_at=NULL WHERE user_id=? AND slot=?',[req.user.id, slot]);
   await pool.query('INSERT INTO inventory (user_id, kind, type, status) VALUES (?,?,?,?)',[req.user.id,'veg_raw',plot.type,'harvested']);
   res.json({ ok:true });
 });
