@@ -1,0 +1,18 @@
+﻿# Общие
+.DS_Store
+*.log
+*.tmp
+
+# Node
+**/node_modules
+frontend/dist
+frontend/.vite
+pnpm-lock.yaml
+
+# IDE/OS
+.vscode/
+.idea/
+Thumbs.db
+
+# Наши секреты
+backend/.env

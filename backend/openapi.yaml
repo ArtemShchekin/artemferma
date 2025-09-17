@@ -1,0 +1,251 @@
+
+openapi: 3.1.0
+info:
+  title: Artem Ferm API
+  version: 1.0.0
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthRegisterReq:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 20
+          description: Латиница, минимум одна цифра
+    AuthLoginReq:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    TokenResp:
+      type: object
+      properties:
+        token:
+          type: string
+    Profile:
+      type: object
+      properties:
+        isCoolFarmer: { type: boolean }
+        firstName: { type: string, nullable: true }
+        lastName: { type: string, nullable: true }
+        middleName: { type: string, nullable: true }
+        nickname: { type: string, nullable: true }
+        passport: { type: string, nullable: true }
+        level: { type: integer, minimum: 1, maximum: 2 }
+        soldCount: { type: integer }
+        balance: { type: integer }
+    ShopPrices:
+      type: object
+      properties:
+        purchase:
+          type: object
+          properties:
+            basePrice: { type: integer }
+            advPrice: { type: integer }
+        sale:
+          type: object
+          properties:
+            basePrice: { type: integer }
+            advPrice: { type: integer }
+    InventoryItem:
+      type: object
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [seed, veg_raw, veg_washed] }
+        type: { type: string, enum: [radish, carrot, cabbage, mango, potato, eggplant] }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+    Plot:
+      type: object
+      properties:
+        slot: { type: integer }
+        type: { type: string, nullable: true }
+        plantedAt: { type: string, format: date-time, nullable: true }
+        matured: { type: boolean }
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRegisterReq' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResp' }
+  /auth/login:
+    post:
+      summary: Логин
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLoginReq' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResp' }
+  /profile:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Получить профиль
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+    put:
+      security: [{ bearerAuth: [] }]
+      summary: Сохранить профиль
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Profile' }
+      responses:
+        '200':
+          description: OK
+  /shop/prices:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Получить цены
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShopPrices' }
+  /shop/buy:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Купить семена
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [radish, carrot, cabbage, mango, potato, eggplant]
+      responses:
+        '200':
+          description: OK
+  /shop/sell:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Продать помытый овощ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inventoryId]
+              properties:
+                inventoryId: { type: integer }
+      responses:
+        '200':
+          description: OK
+  /inventory:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Инвентарь
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seeds:
+                    type: array
+                    items: { $ref: '#/components/schemas/InventoryItem' }
+                  vegRaw:
+                    type: array
+                    items: { $ref: '#/components/schemas/InventoryItem' }
+                  vegWashed:
+                    type: array
+                    items: { $ref: '#/components/schemas/InventoryItem' }
+  /inventory/wash:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Помыть овощ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inventoryId]
+              properties:
+                inventoryId: { type: integer }
+      responses:
+        '200':
+          description: OK
+  /garden/plots:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Состояние грядок
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Plot' }
+  /garden/plant:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Посадить семя в слот
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slot, inventoryId]
+              properties:
+                slot: { type: integer }
+                inventoryId: { type: integer }
+      responses:
+        '200': { description: OK }
+  /garden/harvest:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Собрать созревший овощ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slot]
+              properties:
+                slot: { type: integer }
+      responses:
+        '200': { description: OK }

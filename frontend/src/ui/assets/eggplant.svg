@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
+  </filter></defs>
+  <g filter="url(#s)">
+    <ellipse cx="64" cy="72" rx="40" ry="36" fill="#9c27b0" stroke="#6d4c41" stroke-width="5"/>
+    <path d="M64 48 C70 30, 96 26, 102 40 C90 40, 78 46, 64 48 Z" fill="#2e7d32" stroke="#1b5e20" stroke-width="5"/>
+    <text x="64" y="122" text-anchor="middle" font-size="18" font-family="Arial" fill="#333">Баклажан</text>
+  </g>
+</svg>

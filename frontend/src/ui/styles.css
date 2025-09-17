@@ -1,0 +1,41 @@
+
+@font-face{font-family:FarmHand;src:local('Comic Sans MS');}
+:root{
+  --green:#7BC26B;
+  --brown:#7a4f2c;
+  --yellow:#ffd66b;
+  --sky:#b3e5ff;
+  --red:#e84c3d;
+}
+body{margin:0;background:#f7f2ef;font-family:FarmHand,system-ui;}
+.app{
+  min-height:100vh;
+  background: url('./assets/bg-farmer.svg') center/cover fixed no-repeat;
+}
+.header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(255,255,255,.7);backdrop-filter:saturate(1.2) blur(4px);}
+.logo{width:40px;height:40px;border-radius:50%;background:var(--yellow);box-shadow:0 2px 6px rgba(0,0,0,.2);display:grid;place-items:center;font-weight:700;}
+.tabs{display:flex;gap:8px;padding:10px 20px;}
+.tab{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--yellow);border:2px solid var(--brown);cursor:pointer;box-shadow:0 3px 0 var(--brown);}
+.tab img{width:18px;height:18px;display:block}
+.tab.active{background:#fff;}
+.card{background:rgba(255,255,255,.88);border:2px solid var(--brown);border-radius:16px;padding:16px;box-shadow:0 6px 0 var(--brown);}
+.grid{display:grid;gap:16px;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.row{display:flex;gap:12px;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--green);border:2px solid var(--brown);padding:8px 12px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--brown);}
+.btn.secondary{background:#fff;}
+.btn.danger{background:var(--red);color:#fff;}
+.btn img{width:18px;height:18px;display:block}
+.badge{background:#fff;border:2px solid var(--brown);border-radius:999px;padding:4px 10px;}
+.toast{position:fixed;right:16px;top:16px;background:#fff;border:2px solid var(--brown);border-radius:12px;padding:10px 12px;box-shadow:0 6px 0 var(--brown);}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);display:grid;place-items:center;}
+.modal{width:min(480px,95vw);}
+.input{display:flex;flex-direction:column;gap:4px;}
+.input input{padding:10px;border:2px solid var(--brown);border-radius:10px;}
+.err{color:var(--red);font-weight:700;}
+.slot{min-height:140px;background:#e6ffb0;border:2px dashed var(--brown);border-radius:12px;display:grid;place-items:center;}
+.shop-item{display:flex;justify-content:space-between;align-items:center;border:2px dashed var(--brown);border-radius:12px;padding:8px 12px;background:#fff;}
+.shop-left{display:flex;align-items:center;gap:10px}
+.shop-left img{width:36px;height:36px}
+.money{font-weight:800;color:#1b5e20;}
