@@ -243,7 +243,13 @@ function matured(planted_at){
 app.get('/api/garden/plots', auth, async (req,res)=>{
   const pool = await getPool();
   const [plots] = await pool.query('SELECT * FROM plots WHERE user_id=? ORDER BY slot ASC',[req.user.id]);
-  const mapped = plots.map(p=>({ slot: p.slot, type: p.type, plantedAt: p.planted_at, matured: matured(p.planted_at) && !p.harvested }));
+  const mapped = plots.map(p=>({
+    slot: p.slot,
+    type: p.harvested ? null : p.type,
+    plantedAt: p.planted_at,
+    matured: matured(p.planted_at) && !p.harvested,
+    harvested: !!p.harvested
+  }));
   res.json(mapped);
 });
 

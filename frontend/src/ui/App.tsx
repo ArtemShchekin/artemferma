@@ -369,7 +369,7 @@ function Garden({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any}){
     <div className='grid grid-3'>
       {plots.map(p=>
         <div key={p.slot} className='slot card'>
-          {!p.type? <div style={{textAlign:'center'}}>
+           {!p.type || p.harvested? <div style={{textAlign:'center'}}>
             <div>Пустая грядка #{p.slot}</div>
             <SeedPicker seeds={inv.seeds} onPick={(id)=>plant(p.slot,id)} seedIcons={seedIcons}/>
           </div>:
