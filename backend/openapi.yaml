@@ -190,19 +190,15 @@ paths:
                   vegWashed:
                     type: array
                     items: { $ref: '#/components/schemas/InventoryItem' }
-  /inventory/wash:
-    post:
+  /inventory/wash/{inventoryId}:
+    patch:
       security: [{ bearerAuth: [] }]
       summary: Помыть овощ
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [inventoryId]
-              properties:
-                inventoryId: { type: integer }
+      parameters:
+        - in: path
+          name: inventoryId
+          required: true
+          schema: { type: integer }
       responses:
         '200':
           description: OK

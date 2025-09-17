@@ -37,14 +37,20 @@ export default function App(){
   const [token, setTok] = React.useState<string|null>(getStoredToken())
   const [active, setActive] = React.useState<Tab>('Профиль')
   const [toast, setToast] = React.useState<string|null>(null)
-  const [showLogin, setShowLogin] = React.useState(false)
-  const [showReg, setShowReg] = React.useState(false)
 
   React.useEffect(()=>{ setToken(token) },[token])
-  React.useEffect(()=>{ if(!token){ setShowLogin(true) } },[])
-
-  const logout=()=>{ localStorage.removeItem('token'); setTok(null); setShowLogin(true) }
+  const logout=()=>{ localStorage.removeItem('token'); setTok(null); setActive('Профиль') }
   const show=(m:string)=>{ setToast(m); setTimeout(()=>setToast(null), 2500) }
+
+  if(!token){
+    return <div className='app auth-app'>
+      <AuthPage
+        onLoginSuccess={(t)=>{ show('Вход выполнен'); saveToken(t); setTok(t) }}
+        onRegisterSuccess={(t)=>{ show('Регистрация произошла успешно'); saveToken(t); setTok(t) }}
+      />
+      {toast? <div className="toast">{toast}</div>: null}
+    </div>
+  }
 
   const tabs: {k:Tab; icon:string}[] = [
     {k:'Профиль',icon:icProfile},
@@ -54,7 +60,7 @@ export default function App(){
   ]
 
   return <div className='app'>
-    <Header onLogin={()=>setShowLogin(true)} onReg={()=>setShowReg(true)} onLogout={logout} token={token}/>
+    <Header onLogout={logout}/>
     <div className='tabs'>
       {tabs.map(t=>
         <button key={t.k} className={'tab '+(active===t.k?'active':'')} onClick={()=>setActive(t.k)}>
@@ -63,30 +69,22 @@ export default function App(){
       )}
     </div>
     <div style={{padding:20}}>
-      {!token? <div className='card'>Войдите, чтобы продолжить.</div>:
-        active==='Профиль'? <Profile onToast={show}/>:
+      {active==='Профиль'? <Profile onToast={show}/>:
         active==='Магазин'? <Shop onToast={show} seedIcons={seedIcons}/>:
         active==='Грядка'? <Garden onToast={show} seedIcons={seedIcons}/>:
         <Inventory onToast={show} seedIcons={seedIcons}/>
       }
     </div>
-    {showLogin && <LoginModal onClose={()=>setShowLogin(false)} onSuccess={(t)=>{ show('Вход выполнен'); saveToken(t); setTok(t); }}/>}
-    {showReg && <RegisterModal onClose={()=>setShowReg(false)} onSuccess={(t)=>{ show('Регистрация произошла успешно'); }}/>}
     {toast? <div className="toast">{toast}</div>: null}
   </div>
 }
 
-function Header({onLogin,onReg,onLogout,token}:{onLogin:()=>void;onReg:()=>void;onLogout:()=>void;token:string|null}){
+function Header({onLogout}:{onLogout:()=>void}){
   return <div className='header'>
     <div className='logo'>🥕</div>
     <div className='badge'>Ферма</div>
     <div style={{marginLeft:'auto', display:'flex', gap:8}}>
-      {!token? <>
-        <button className='btn secondary' onClick={onLogin}>Войти</button>
-        <button className='btn' onClick={onReg}>Зарегистрироваться</button>
-      </>:
       <button className='btn danger' onClick={onLogout}>Выйти</button>
-      }
     </div>
   </div>
 }
@@ -99,8 +97,24 @@ function InputField({label,type='text',value,onChange,error}:{label:string;type?
   </div>
 }
 
-// === Auth modals ===
-function LoginModal({onClose,onSuccess}:{onClose:()=>void;onSuccess:(t:string)=>void}){
+// === Auth page ===
+function AuthPage({onLoginSuccess,onRegisterSuccess}:{onLoginSuccess:(t:string)=>void;onRegisterSuccess:(t:string)=>void}){
+  const [mode,setMode] = React.useState<'login'|'register'>('login')
+  return <div className='auth-page'>
+    <div className='card auth-card'>
+      <div className='auth-toggle'>
+        <button type='button' className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Вход</button>
+        <button type='button' className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Регистрация</button>
+      </div>
+      {mode==='login'?
+        <LoginForm onSuccess={onLoginSuccess} onSwitchToRegister={()=>setMode('register')}/>:
+        <RegisterForm onSuccess={(t)=>{ onRegisterSuccess(t); setMode('login') }} onSwitchToLogin={()=>setMode('login')}/>
+      }
+    </div>
+  </div>
+}
+
+function LoginForm({onSuccess,onSwitchToRegister}:{onSuccess:(t:string)=>void;onSwitchToRegister:()=>void}){
   const [email,setEmail]=React.useState('')
   const [password,setPassword]=React.useState('')
   const [errEmail,setErrEmail]=React.useState<string|null>(null)
@@ -112,25 +126,23 @@ function LoginModal({onClose,onSuccess}:{onClose:()=>void;onSuccess:(t:string)=>
     if(!password){ setErrPass('Не заполнено поле'); return }
     try{
       const {data}=await api.post('/auth/login',{email,password})
-      onSuccess(data.token); onClose()
+      onSuccess(data.token)
     }catch(e:any){ setErrPass('Ошибка валидации') }
   }
-  return <div className='modal-backdrop'>
-    <div className='card modal'>
-      <h3>Вход</h3>
-      <div className='grid'>
-        <InputField label='Email' value={email} onChange={setEmail} error={errEmail}/>
-        <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPass}/>
-      </div>
-      <div className='row' style={{justifyContent:'flex-end', marginTop:12}}>
-        <button className='btn secondary' onClick={onClose}>Закрыть</button>
-        <button className='btn' onClick={submit}>Войти</button>
-      </div>
+  return <div className='auth-content'>
+    <h3>Вход</h3>
+    <div className='grid'>
+      <InputField label='Email' value={email} onChange={setEmail} error={errEmail}/>
+      <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPass}/>
+    </div>
+    <div className='row auth-footer'>
+      <button className='auth-link' onClick={onSwitchToRegister}>Создать аккаунт</button>
+      <button className='btn' onClick={submit}>Войти</button>
     </div>
   </div>
 }
 
-function RegisterModal({onClose,onSuccess}:{onClose:()=>void;onSuccess:(t:string)=>void}){
+function RegisterForm({onSuccess,onSwitchToLogin}:{onSuccess:(t:string)=>void;onSwitchToLogin:()=>void}){
   const [email,setEmail]=React.useState('')
   const [password,setPassword]=React.useState('')
   const [pass2,setPass2]=React.useState('')
@@ -147,21 +159,19 @@ function RegisterModal({onClose,onSuccess}:{onClose:()=>void;onSuccess:(t:string
     if(pass2!==password){ setErrP2('Ошибка валидации'); return }
     try{
       const {data}=await api.post('/auth/register',{email,password})
-      onSuccess(data.token); onClose()
+      onSuccess(data.token)
     }catch(e:any){ setErrE('Ошибка валидации') }
   }
-  return <div className='modal-backdrop'>
-    <div className='card modal'>
-      <h3>Регистрация</h3>
-      <div className='grid'>
-        <InputField label='Email' value={email} onChange={setEmail} error={errE}/>
-        <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errP}/>
-        <InputField label='Подтверждение пароля' type='password' value={pass2} onChange={setPass2} error={errP2}/>
-      </div>
-      <div className='row' style={{justifyContent:'flex-end', marginTop:12}}>
-        <button className='btn secondary' onClick={onClose}>Назад</button>
-        <button className='btn' onClick={submit}>Зарегистрироваться</button>
-      </div>
+  return <div className='auth-content'>
+    <h3>Регистрация</h3>
+    <div className='grid'>
+      <InputField label='Email' value={email} onChange={setEmail} error={errE}/>
+      <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errP}/>
+      <InputField label='Подтверждение пароля' type='password' value={pass2} onChange={setPass2} error={errP2}/>
+    </div>
+    <div className='row auth-footer'>
+      <button className='auth-link' onClick={onSwitchToLogin}>У меня уже есть аккаунт</button>
+      <button className='btn' onClick={submit}>Зарегистрироваться</button>
     </div>
   </div>
 }
@@ -187,13 +197,6 @@ function Profile({onToast}:{onToast:(m:string)=>void}){
     if(isCool){
       if(!form.nickname) return setErr('nickname','Не заполнено поле')
       if(!/^[A-Za-z]{2,15}$/.test(form.nickname)) return setErr('nickname','Ошибка валидации')
-      if(!form.passport) return setErr('passport','Не заполнено поле')
-      if(!/^\d{6}$/.test(form.passport)) return setErr('passport','Ошибка валидации')
-    }else{
-      const ru=/^[А-ЯЁа-яё\-\s]{2,40}$/
-      for(const k of ['firstName','lastName','middleName']){
-        if(!form[k]) return setErr(k,'Не заполнено поле')
-        if(!ru.test(form[k])) return setErr(k,'Ошибка валидации')
       }
     }
     await api.put('/profile', { isCoolFarmer:isCool, ...form })
@@ -297,7 +300,7 @@ function Inventory({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any
   const [inv,setInv]=React.useState<any>({seeds:[],vegRaw:[],vegWashed:[]})
   const load=async()=>{ const {data}=await api.get('/inventory'); setInv(data) }
   React.useEffect(()=>{ load() },[])
-  const wash=async(id:number)=>{ await api.post('/inventory/wash',{inventoryId:id}); onToast('Овощ помыт'); load() }
+  const wash=async(id:number)=>{ await api.patch(`/inventory/wash/${id}`); onToast('Овощ помыт'); load() }
 
   return <div className='grid'>
     <div className='row' style={{justifyContent:'flex-end'}}>

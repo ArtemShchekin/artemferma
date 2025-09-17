@@ -37,7 +37,7 @@ docker compose up -d --build
 
 - **Аутентификация**: /api/auth/register, /api/auth/login (JWT Bearer). После регистрации токен возвращается, но автоматический вход не выполняется.
 - **Профиль**: /api/profile GET/PUT. При включенном чекбоксе «Ты крутой фермер?» используются поля nickname/passport, иначе ФИО. Валидация по правилам задачи.
-- **Инвентарь**: семена, собранные, помытые. /api/inventory (GET), /api/inventory/wash (POST).
+- **Инвентарь**: семена, собранные, помытые. /api/inventory (GET), /api/inventory/wash/{id} (PATCH).
 - **Магазин**: /api/shop/prices (GET), /api/shop/buy (POST), /api/shop/sell (POST). Продажи увеличивают счётчик.
 - **Грядка**: 6 слотов. /api/garden/plots (GET), /api/garden/plant (POST), /api/garden/harvest (POST).
   Созревание — через 10 минут: бек хранит planted_at и вычисляет созревание по времени «сейчас - planted_at >= 10 минут».
