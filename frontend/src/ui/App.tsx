@@ -21,6 +21,8 @@ import eggplant from './assets/eggplant.svg'
 
 type Tab = 'Профиль'|'Магазин'|'Грядка'|'Инвентарь'
 
+type Page = 'auth'|'main'
+
 type SeedIconMap = Record<string,string>
 
 type ToastFn = (message: string) => void
@@ -53,27 +55,60 @@ function persistToken(token: string){
 }
 
 export default function App(){
-  const [token,setTok] = React.useState<string|null>(getStoredToken())
-  const [active,setActive] = React.useState<Tab>('Профиль')
+  const [token,setTok] = React.useState<string|null>(()=>getStoredToken())
+  const [page,setPage] = React.useState<Page>(()=>getStoredToken()? 'main':'auth')
   const [toast,setToast] = React.useState<string|null>(null)
 
+    const goTo = React.useCallback((next: Page, options?: { replace?: boolean })=>{
+    setPage(next)
+    if(typeof window !== 'undefined'){
+      const path = next==='main'?'/app':'/'
+      if(options?.replace){
+        window.history.replaceState(null,'',path)
+      }else{
+        window.history.pushState(null,'',path)
+      }
+    }
+  },[])
+
   React.useEffect(()=>{ setToken(token) },[token])
+
+  React.useEffect(()=>{
+    if(typeof window === 'undefined') return
+    const sync = ()=>{
+      const path = window.location.pathname
+      if(path==='/app'){
+        if(token){
+          setPage('main')
+        }else{
+          goTo('auth', { replace: true })
+        }
+      }else{
+        if(token){
+          goTo('main', { replace: true })
+        }else{
+          if(path!=='/'){
+            goTo('auth', { replace: true })
+          }
+          setPage('auth')
+        }
+      }
+    }
+    sync()
+    window.addEventListener('popstate', sync)
+    return ()=> window.removeEventListener('popstate', sync)
+  },[token, goTo])
 
   const showToast: ToastFn = (message)=>{
     setToast(message)
     setTimeout(()=>setToast(null), 2500)
   }
 
-  const logout = ()=>{
-    localStorage.removeItem('token')
-    setTok(null)
-    setActive('Профиль')
-  }
-
   const handleLoginSuccess = (newToken: string)=>{
     showToast('Вход выполнен')
     persistToken(newToken)
     setTok(newToken)
+    goTo('main', { replace: true })
   }
 
   const handleRegisterSuccess = (newToken: string)=>{
@@ -81,6 +116,33 @@ export default function App(){
     persistToken(newToken)
     setTok(newToken)
   }
+
+  const handleLogout = ()=>{
+    localStorage.removeItem('token')
+    setTok(null)
+    goTo('auth', { replace: true })
+  }
+
+  return (
+    <div className='app'>
+      {token && page==='main' ? (
+        <MainPage
+          onLogout={handleLogout}
+          onToast={showToast}
+        />
+      ) : (
+        <AuthPage
+          onLoginSuccess={handleLoginSuccess}
+          onRegisterSuccess={handleRegisterSuccess}
+        />
+      )}
+      {toast && <div className='toast'>{toast}</div>}
+    </div>
+  )
+}
+
+function MainPage({ onLogout, onToast }:{ onLogout:()=>void; onToast: ToastFn }){
+  const [active,setActive] = React.useState<Tab>('Профиль')
 
   const tabs: { key: Tab; icon: string }[] = [
     { key:'Профиль', icon: icProfile },
@@ -90,36 +152,26 @@ export default function App(){
   ]
 
   return (
-    <div className='app'>
-      {token ? (
-        <>
-          <Header onLogout={logout} />
-          <div className='tabs'>
-            {tabs.map(tab=>(
-              <button
-                key={tab.key}
-                className={'tab '+(active===tab.key?'active':'')}
-                onClick={()=>setActive(tab.key)}
-              >
-                <img src={tab.icon} alt=''/> {tab.key}
-              </button>
-            ))}
-          </div>
-          <div style={{padding:20}}>
-            {active==='Профиль' && <Profile onToast={showToast} />}
-            {active==='Магазин' && <Shop onToast={showToast} seedIcons={seedIcons} />}
-            {active==='Грядка' && <Garden onToast={showToast} seedIcons={seedIcons} />}
-            {active==='Инвентарь' && <Inventory onToast={showToast} seedIcons={seedIcons} />}
-          </div>
-        </>
-      ) : (
-        <AuthPage
-          onLoginSuccess={handleLoginSuccess}
-          onRegisterSuccess={handleRegisterSuccess}
-        />
-      )}
-      {toast && <div className='toast'>{toast}</div>}
-    </div>
+    <>
+      <Header onLogout={onLogout} />
+      <div className='tabs'>
+        {tabs.map(tab=>(
+          <button
+            key={tab.key}
+            className={'tab '+(active===tab.key?'active':'')}
+            onClick={()=>setActive(tab.key)}
+          >
+            <img src={tab.icon} alt=''/> {tab.key}
+          </button>
+        ))}
+      </div>
+      <div style={{padding:20}}>
+        {active==='Профиль' && <Profile onToast={onToast} />}
+        {active==='Магазин' && <Shop onToast={onToast} seedIcons={seedIcons} />}
+        {active==='Грядка' && <Garden onToast={onToast} seedIcons={seedIcons} />}
+        {active==='Инвентарь' && <Inventory onToast={onToast} seedIcons={seedIcons} />}
+      </div>
+    </>
   )
 }
 
@@ -140,19 +192,22 @@ function InputField({
   type='text',
   value,
   onChange,
-  error
+  error,
+  footer
 }:{
   label: string
   type?: string
   value: string
   onChange: (value: string)=>void
   error?: string|null
+  footer?: React.ReactNode
 }){
   return (
     <div className='input'>
       <label>{label}</label>
       <input type={type} value={value} onChange={e=>onChange(e.target.value)} />
       {error ? <div className='err'>{error}</div> : null}
+      {footer}
     </div>
   )
 }
@@ -168,19 +223,7 @@ function AuthPage({
 
   return (
     <div className='auth-page'>
-      <div className='card auth-panel'>
-        <div className='auth-tabs'>
-          <button
-            type='button'
-            className={'auth-tab '+(mode==='login'?'active':'')}
-            onClick={()=>setMode('login')}
-          >Вход</button>
-          <button
-            type='button'
-            className={'auth-tab '+(mode==='register'?'active':'')}
-            onClick={()=>setMode('register')}
-          >Регистрация</button>
-        </div>
+      <Modal title={mode==='login'?'Авторизация':'Регистрация'}>
         {mode==='login' ? (
           <LoginForm
             onSuccess={onLoginSuccess}
@@ -192,6 +235,17 @@ function AuthPage({
             onSwitchToLogin={()=>setMode('login')}
           />
         )}
+              </Modal>
+    </div>
+  )
+}
+
+function Modal({ title, children }:{ title: string; children: React.ReactNode }){
+  return (
+    <div className='modal-backdrop auth-overlay'>
+      <div className='card modal auth-modal'>
+        <h3 className='modal-title'>{title}</h3>
+        {children}
       </div>
     </div>
   )
@@ -227,16 +281,23 @@ function LoginForm({
 
   return (
     <div className='auth-content'>
-      <h3>Вход</h3>
       <div className='grid'>
         <InputField label='Email' value={email} onChange={setEmail} error={errEmail} />
-        <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPassword} />
+        <InputField
+          label='Пароль'
+          type='password'
+          value={password}
+          onChange={setPassword}
+          error={errPassword}
+          footer={(
+            <div className='auth-alt-column'>
+              <span className='auth-question'>Нет аккаунта бродяга?</span>
+              <button type='button' className='auth-secondary' onClick={onSwitchToRegister}>Зарегистрироваться</button>
+            </div>
+          )}
+        />
       </div>
-      <div className='auth-controls'>
-        <div className='auth-alt'>
-          <span className='auth-question'>Нет аккаунта?</span>
-          <button type='button' className='auth-secondary' onClick={onSwitchToRegister}>Зарегистрироваться</button>
-        </div>
+      <div className='auth-controls auth-controls--single'>
         <button className='btn' onClick={submit}>Войти</button>
       </div>
     </div>
@@ -279,7 +340,6 @@ function RegisterForm({
 
   return (
     <div className='auth-content'>
-      <h3>Регистрация</h3>
       <div className='grid'>
         <InputField label='Email' value={email} onChange={setEmail} error={errEmail} />
         <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPassword} />
