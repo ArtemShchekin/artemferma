@@ -65,27 +65,30 @@ export default function App(){
   ]
 
   return <div className='app'>
-    {token? <>
-      <Header onLogout={logout}/>
-      <div className='tabs'>
-        {tabs.map(t=>
-          <button key={t.k} className={'tab '+(active===t.k?'active':'')} onClick={()=>setActive(t.k)}>
-            <img src={t.icon} alt="" /> {t.k}
-          </button>
-        )}
-      </div>
-      <div style={{padding:20}}>
-        {active==='Профиль'? <Profile onToast={show}/>:
-          active==='Магазин'? <Shop onToast={show} seedIcons={seedIcons}/>:
-          active==='Грядка'? <Garden onToast={show} seedIcons={seedIcons}/>:
-          <Inventory onToast={show} seedIcons={seedIcons}/>
-        }
-      </div>
-    </>:
+    {token? (
+      <>
+        <Header onLogout={logout}/>
+        <div className='tabs'>
+          {tabs.map(t=>
+            <button key={t.k} className={'tab '+(active===t.k?'active':'')} onClick={()=>setActive(t.k)}>
+              <img src={t.icon} alt="" /> {t.k}
+            </button>
+          )}
+        </div>
+        <div style={{padding:20}}>
+          {active==='Профиль'? <Profile onToast={show}/>:
+            active==='Магазин'? <Shop onToast={show} seedIcons={seedIcons}/>:
+            active==='Грядка'? <Garden onToast={show} seedIcons={seedIcons}/>:
+            <Inventory onToast={show} seedIcons={seedIcons}/>
+          }
+        </div>
+      </>
+    ):(
       <AuthPage
         onLoginSuccess={handleLoginSuccess}
         onRegisterSuccess={handleRegisterSuccess}
-      />}
+      />
+    )}
     {toast? <div className="toast">{toast}</div>: null}
   </div>
 }
