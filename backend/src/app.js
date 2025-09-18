@@ -20,7 +20,8 @@ export function createApp() {
       // Отключаем эти политики, оставляя остальные механизмы Helmet активными.
       contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: false
+      crossOriginResourcePolicy: false,
+      crossOriginOpenerPolicy: false
     })
   );  
   app.use(requestLogger);
