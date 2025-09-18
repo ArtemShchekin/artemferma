@@ -13,6 +13,13 @@ export function createApp() {
   app.use(cors());
   app.use(express.json());
   app.use(helmet());
+  app.use(
+    helmet({
+      // Swagger UI uses inline scripts/styles, so the default CSP breaks /api/docs.
+      // Disable CSP while keeping the rest of Helmet's protections enabled.
+      contentSecurityPolicy: false
+    })
+  );  
   app.use(requestLogger);
 
   const openapi = loadOpenApi();

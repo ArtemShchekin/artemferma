@@ -16,3 +16,7 @@ Thumbs.db
 
 # Наши секреты
 backend/.env
+# локальные бэкапы/мусор
+docker-compose.yml.bak-*
+nginx/nginx.conf.bak-*
+*.log
