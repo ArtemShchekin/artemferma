@@ -18,7 +18,15 @@ docker compose up -d --build
 # 3) Откройте
 # Сайт:     http://localhost
 # Swagger:  http://localhost/api/docs
+# Логи:     http://localhost:5601 (OpenSearch Dashboards)
 ```
+## Просмотр логов
+
+- В состав docker-compose теперь входят `opensearch` и `opensearch-dashboards`.
+- Backend автоматически отправляет структурированные логи HTTP-запросов и ошибок в индекс `ferm-logs` (можно переопределить через `OPENSEARCH_LOG_INDEX`).
+- После запуска проекта откройте [http://localhost:5601](http://localhost:5601) и выберите индекс `ferm-logs*`, чтобы увидеть логи (в dev-сборке security-плагины отключены, авторизация не требуется).
+- Для запуска вне Docker задайте переменные окружения `OPENSEARCH_NODE`, `OPENSEARCH_LOG_INDEX` и при необходимости `OPENSEARCH_USERNAME`/`OPENSEARCH_PASSWORD`.
+
 
 ## Деплой на сервер (artem-ferm.ru)
 
@@ -37,7 +45,7 @@ docker compose up -d --build
 
 - **Аутентификация**: /api/auth/register, /api/auth/login (JWT Bearer). После регистрации токен возвращается, но автоматический вход не выполняется.
 - **Профиль**: /api/profile GET/PUT. При включенном чекбоксе «Ты крутой фермер?» используются поля nickname/passport, иначе ФИО. Валидация по правилам задачи.
-- **Инвентарь**: семена, собранные, помытые. /api/inventory (GET), /api/inventory/vegetables/{id} (GET), /api/inventory/wash/{id} (PATCH).
+- **Инвентарь**: семена, собранные, помытые. /api/inventory (GET), /api/inventory/wash (POST).
 - **Магазин**: /api/shop/prices (GET), /api/shop/buy (POST), /api/shop/sell (POST). Продажи увеличивают счётчик.
 - **Грядка**: 6 слотов. /api/garden/plots (GET), /api/garden/plant (POST), /api/garden/harvest (POST).
   Созревание — через 10 минут: бек хранит planted_at и вычисляет созревание по времени «сейчас - planted_at >= 10 минут».
