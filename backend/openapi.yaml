@@ -75,7 +75,7 @@ components:
         type: { type: string, nullable: true }
         plantedAt: { type: string, format: date-time, nullable: true }
         matured: { type: boolean }
-            GardenConfig:
+    GardenConfig:
       type: object
       properties:
         growthMinutes: { type: integer }
@@ -222,7 +222,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Plot' }
-    /garden/config:
+  /garden/config:
     get:
       security: [{ bearerAuth: [] }]
       summary: Конфигурация грядок
