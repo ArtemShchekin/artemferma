@@ -49,6 +49,7 @@ body{margin:0;background:#f7f2ef;font-family:FarmHand,system-ui;}
 .auth-content{display:grid;gap:16px;}
 .auth-content h3{margin:0;color:var(--brown);}
 .auth-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;}
+.auth-controls.auth-single{justify-content:flex-end;}
 .auth-alt{display:flex;align-items:center;gap:6px;}
 .auth-question{font-size:14px;color:var(--brown);}
 .auth-secondary{background:none;border:none;padding:0;color:var(--brown);cursor:pointer;text-decoration:underline;font-size:14px;}

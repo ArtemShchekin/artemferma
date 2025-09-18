@@ -43,6 +43,12 @@ const seedIcons: SeedIconMap = {
   eggplant
 }
 
+type RoutePath = '/' | '/auth'
+
+function getCurrentPath(): RoutePath {
+  return window.location.pathname === '/auth' ? '/auth' : '/'
+}
+
 function getStoredToken(){
   return localStorage.getItem('token')
 }
@@ -59,6 +65,31 @@ export default function App(){
 
   React.useEffect(()=>{ setToken(token) },[token])
 
+    const navigate = React.useCallback((next: RoutePath, options?: { replace?: boolean })=>{
+    if(options?.replace){
+      window.history.replaceState(null, '', next)
+    }else if(window.location.pathname !== next){
+      window.history.pushState(null, '', next)
+    }
+    setPath(next)
+  },[])
+
+  React.useEffect(()=>{
+    const handlePop = ()=>{
+      setPath(getCurrentPath())
+    }
+    window.addEventListener('popstate', handlePop)
+    return ()=>window.removeEventListener('popstate', handlePop)
+  },[])
+
+  React.useEffect(()=>{
+    if(!token && path !== '/auth'){
+      navigate('/auth', { replace: true })
+    }else if(token && path === '/auth'){
+      navigate('/', { replace: true })
+    }
+  },[token, path, navigate])
+
   const showToast: ToastFn = (message)=>{
     setToast(message)
     setTimeout(()=>setToast(null), 2500)
@@ -67,7 +98,7 @@ export default function App(){
   const logout = ()=>{
     localStorage.removeItem('token')
     setTok(null)
-    setActive('Профиль')
+    navigate('/auth', { replace: true })
   }
 
   const handleLoginSuccess = (newToken: string)=>{
@@ -76,11 +107,29 @@ export default function App(){
     setTok(newToken)
   }
 
-  const handleRegisterSuccess = (newToken: string)=>{
-    showToast('Регистрация произошла успешно')
-    persistToken(newToken)
-    setTok(newToken)
+  const handleRegisterSuccess = ()=>{
+    showToast('Регистрация прошла успешно')
   }
+
+  const isAuthenticated = Boolean(token)
+
+  return (
+    <div className='app'>
+      {isAuthenticated ? (
+        <MainLayout onLogout={logout} onToast={showToast} />
+      ) : (
+        <AuthPage
+          onLoginSuccess={handleLoginSuccess}
+          onRegisterSuccess={handleRegisterSuccess}
+        />
+      )}
+      {toast && <div className='toast'>{toast}</div>}
+    </div>
+  )
+}
+
+function MainLayout({ onLogout, onToast }:{ onLogout:()=>void; onToast: ToastFn }){
+  const [active,setActive] = React.useState<Tab>('Профиль')
 
   const tabs: { key: Tab; icon: string }[] = [
     { key:'Профиль', icon: icProfile },
@@ -90,36 +139,26 @@ export default function App(){
   ]
 
   return (
-    <div className='app'>
-      {token ? (
-        <>
-          <Header onLogout={logout} />
-          <div className='tabs'>
-            {tabs.map(tab=>(
-              <button
-                key={tab.key}
-                className={'tab '+(active===tab.key?'active':'')}
-                onClick={()=>setActive(tab.key)}
-              >
-                <img src={tab.icon} alt=''/> {tab.key}
-              </button>
-            ))}
-          </div>
-          <div style={{padding:20}}>
-            {active==='Профиль' && <Profile onToast={showToast} />}
-            {active==='Магазин' && <Shop onToast={showToast} seedIcons={seedIcons} />}
-            {active==='Грядка' && <Garden onToast={showToast} seedIcons={seedIcons} />}
-            {active==='Инвентарь' && <Inventory onToast={showToast} seedIcons={seedIcons} />}
-          </div>
-        </>
-      ) : (
-        <AuthPage
-          onLoginSuccess={handleLoginSuccess}
-          onRegisterSuccess={handleRegisterSuccess}
-        />
-      )}
-      {toast && <div className='toast'>{toast}</div>}
-    </div>
+    <>
+      <Header onLogout={onLogout} />
+      <div className='tabs'>
+        {tabs.map(tab=>(
+          <button
+            key={tab.key}
+            className={'tab '+(active===tab.key?'active':'')}
+            onClick={()=>setActive(tab.key)}
+          >
+            <img src={tab.icon} alt=''/> {tab.key}
+          </button>
+        ))}
+      </div>
+      <div style={{padding:20}}>
+        {active==='Профиль' && <Profile onToast={onToast} />}
+        {active==='Магазин' && <Shop onToast={onToast} seedIcons={seedIcons} />}
+        {active==='Грядка' && <Garden onToast={onToast} seedIcons={seedIcons} />}
+        {active==='Инвентарь' && <Inventory onToast={onToast} seedIcons={seedIcons} />}
+      </div>
+    </>
   )
 }
 
@@ -162,36 +201,29 @@ function AuthPage({
   onRegisterSuccess
 }:{
   onLoginSuccess:(token:string)=>void
-  onRegisterSuccess:(token:string)=>void
+  onRegisterSuccess:()=>void
 }){
   const [mode,setMode] = React.useState<'login'|'register'>('login')
 
   return (
     <div className='auth-page'>
-      <div className='card auth-panel'>
-        <div className='auth-tabs'>
-          <button
-            type='button'
-            className={'auth-tab '+(mode==='login'?'active':'')}
-            onClick={()=>setMode('login')}
-          >Вход</button>
-          <button
-            type='button'
-            className={'auth-tab '+(mode==='register'?'active':'')}
-            onClick={()=>setMode('register')}
-          >Регистрация</button>
+      <div className='modal-backdrop auth-overlay'>
+        <div className='card auth-modal'>
+          {mode==='login' ? (
+            <LoginForm
+              onSuccess={onLoginSuccess}
+              onSwitchToRegister={()=>setMode('register')}
+            />
+          ) : (
+            <RegisterForm
+              onSuccess={()=>{
+                onRegisterSuccess()
+                setMode('login')
+              }}
+              onSwitchToLogin={()=>setMode('login')}
+            />
+          )}
         </div>
-        {mode==='login' ? (
-          <LoginForm
-            onSuccess={onLoginSuccess}
-            onSwitchToRegister={()=>setMode('register')}
-          />
-        ) : (
-          <RegisterForm
-            onSuccess={onRegisterSuccess}
-            onSwitchToLogin={()=>setMode('login')}
-          />
-        )}
       </div>
     </div>
   )
@@ -227,16 +259,16 @@ function LoginForm({
 
   return (
     <div className='auth-content'>
-      <h3>Вход</h3>
+      <h3>Авторизация</h3>
       <div className='grid'>
         <InputField label='Email' value={email} onChange={setEmail} error={errEmail} />
         <InputField label='Пароль' type='password' value={password} onChange={setPassword} error={errPassword} />
-      </div>
-      <div className='auth-controls'>
         <div className='auth-alt'>
           <span className='auth-question'>Нет аккаунта?</span>
           <button type='button' className='auth-secondary' onClick={onSwitchToRegister}>Зарегистрироваться</button>
         </div>
+      </div>
+      <div className='auth-controls auth-single'>
         <button className='btn' onClick={submit}>Войти</button>
       </div>
     </div>
@@ -247,7 +279,7 @@ function RegisterForm({
   onSuccess,
   onSwitchToLogin
 }:{
-  onSuccess:(token:string)=>void
+  onSuccess:()=>void
   onSwitchToLogin:()=>void
 }){
   const [email,setEmail] = React.useState('')
@@ -271,7 +303,13 @@ function RegisterForm({
 
     try {
       const { data } = await api.post('/auth/register', { email, password })
-      onSuccess(data.token)
+      if(data?.token){
+        // токен игнорируем, ждём входа пользователя
+      }
+      onSuccess()
+      setEmail('')
+      setPassword('')
+      setConfirm('')
     } catch (err) {
       setErrEmail('Ошибка валидации')
     }
@@ -451,7 +489,6 @@ function Shop({ onToast, seedIcons }:{ onToast: ToastFn; seedIcons: SeedIconMap 
         </div>
       ) : (
         <div className='card grid'>
-          <h3>Помытые овощи к продаже</h3>
           {inventory.vegWashed.length===0 ? (
             <div>Пусто</div>
           ) : (
@@ -532,6 +569,8 @@ function Inventory({ onToast, seedIcons }:{ onToast: ToastFn; seedIcons: SeedIco
 function Garden({ onToast, seedIcons }:{ onToast: ToastFn; seedIcons: SeedIconMap }){
   const [plots,setPlots] = React.useState<any[]>([])
   const [inventory,setInventory] = React.useState<any>({ seeds: [] })
+  const [growthMinutes,setGrowthMinutes] = React.useState(10)
+
 
   const load = async ()=>{
     const plotsResponse = await api.get('/garden/plots')
