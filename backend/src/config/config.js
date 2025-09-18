@@ -33,11 +33,14 @@ const config = {
     growthMinutes: int(process.env.GROWTH_MINUTES, 10)
   },
   opensearch: {
-    node: process.env.OPENSEARCH_NODE || '',
+    enabled: process.env.OPENSEARCH_ENABLED !== 'false',
+    node: process.env.OPENSEARCH_NODE || 'http://opensearch:9200',
     index: process.env.OPENSEARCH_LOG_INDEX || 'ferm-logs',
     username: process.env.OPENSEARCH_USERNAME || '',
     password: process.env.OPENSEARCH_PASSWORD || '',
-    rejectUnauthorized: process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED !== 'false'
+    rejectUnauthorized: process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED !== 'false',
+    indexRetryAttempts: int(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
+    indexRetryDelayMs: int(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000)
   }
 };
 
