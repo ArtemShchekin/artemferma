@@ -2,8 +2,12 @@
 # Build
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+
+# Copy dependency manifests. Allow building even if package-lock.json is absent
+# by falling back to `npm install`.
+COPY package*.json ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
 COPY . .
 RUN npm run build
 
