@@ -1,30 +1,28 @@
 import { Client } from '@opensearch-project/opensearch';
 
-const nodeUrl = process.env.OPENSEARCH_NODE;
-const indexName = process.env.OPENSEARCH_LOG_INDEX || 'ferm-logs';
-const username = process.env.OPENSEARCH_USERNAME;
-const password = process.env.OPENSEARCH_PASSWORD;
-const rejectUnauthorized = process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED !== 'false';
+import config from '../config/index.js';
+
 
 let client;
 let indexPrepared = false;
 
 function getClient() {
-  if (!nodeUrl) {
+  if (!config.opensearch.node) {
     return null;
   }
   if (client) {
     return client;
   }
+
   try {
-    const options = { node: nodeUrl };
-    if (username || password) {
+    const options = { node: config.opensearch.node };
+    if (config.opensearch.username || config.opensearch.password) {
       options.auth = {
-        username: username || '',
-        password: password || ''
+        username: config.opensearch.username,
+        password: config.opensearch.password
       };
     }
-    if (!rejectUnauthorized) {
+    if (!config.opensearch.rejectUnauthorized) {
       options.ssl = { rejectUnauthorized: false };
     }
     client = new Client(options);
@@ -32,6 +30,7 @@ function getClient() {
     console.error('Failed to initialize OpenSearch client:', error);
     client = null;
   }
+
   return client;
 }
 
@@ -43,7 +42,7 @@ async function ensureIndex() {
   try {
     await osClient.indices.create(
       {
-        index: indexName,
+        index: config.opensearch.index,
         body: {
           mappings: {
             properties: {
@@ -75,9 +74,10 @@ async function sendToOpenSearch(body) {
   if (!osClient) {
     return;
   }
+
   try {
     await ensureIndex();
-    await osClient.index({ index: indexName, body });
+    await osClient.index({ index: config.opensearch.index, body });
   } catch (error) {
     console.error('Failed to send log to OpenSearch:', error);
   }
@@ -94,13 +94,13 @@ function baseDocument(level, message, extra = {}) {
 
 export function logInfo(message, extra) {
   const body = baseDocument('info', message, extra);
-  console.log(message);
+  console.log(message, extra ? JSON.stringify(extra) : '');
   return sendToOpenSearch(body);
 }
 
 export function logError(message, extra) {
   const body = baseDocument('error', message, extra);
-  console.error(message, extra?.error);
+  console.error(message, extra?.error || '');
   return sendToOpenSearch(body);
 }
 
