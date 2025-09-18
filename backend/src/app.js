@@ -15,9 +15,12 @@ export function createApp() {
   app.use(helmet());
   app.use(
     helmet({
-      // Swagger UI uses inline scripts/styles, so the default CSP breaks /api/docs.
-      // Disable CSP while keeping the rest of Helmet's protections enabled.
-      contentSecurityPolicy: false
+      // Swagger UI использует встроенные скрипты/стили и отдельные ассеты,
+      // поэтому стандартный CSP и ограничения на кросс-доменные ресурсы ломают загрузку.
+      // Отключаем эти политики, оставляя остальные механизмы Helmet активными.
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: false
     })
   );  
   app.use(requestLogger);
