@@ -328,7 +328,7 @@ function Inventory({onToast, seedIcons}:{onToast:(m:string)=>void; seedIcons:any
   const [inv,setInv]=React.useState<any>({seeds:[],vegRaw:[],vegWashed:[]})
   const load=async()=>{ const {data}=await api.get('/inventory'); setInv(data) }
   React.useEffect(()=>{ load() },[])
-  const wash=async(id:number)=>{ await api.patch(`/inventory/wash/${id}`); onToast('Овощ помыт'); load() }
+    const wash=async(id:number)=>{ await api.post('/inventory/wash',{inventoryId:id}); onToast('Овощ помыт'); load() }
 
   return <div className='grid'>
     <div className='grid grid-3'>

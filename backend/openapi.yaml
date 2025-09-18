@@ -68,15 +68,6 @@ components:
         type: { type: string, enum: [radish, carrot, cabbage, mango, potato, eggplant] }
         status: { type: string }
         createdAt: { type: string, format: date-time }
-        VegetableInfo:
-      type: object
-      properties:
-        id: { type: integer }
-        userId: { type: integer }
-        washed: { type: boolean }
-        type: { type: string, enum: [radish, carrot, cabbage, mango, potato, eggplant] }
-        status: { type: string }
-        createdAt: { type: string, format: date-time }
     Plot:
       type: object
       properties:
@@ -199,23 +190,8 @@ paths:
                   vegWashed:
                     type: array
                     items: { $ref: '#/components/schemas/InventoryItem' }
-    /inventory/vegetables/{inventoryId}:
-    get:
-      security: [{ bearerAuth: [] }]
-      summary: Получить овощ по id
-      parameters:
-        - in: path
-          name: inventoryId
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/VegetableInfo' }
-  /inventory/wash/{inventoryId}:
-    patch:
+  /inventory/wash:
+    post:
       security: [{ bearerAuth: [] }]
       summary: Помыть овощ
       parameters:
