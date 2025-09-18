@@ -18,14 +18,46 @@ services:
       timeout: 5s
       retries: 10
 
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: ferm-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    ports:
+      - "9200:9200"
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.13.0
+    container_name: ferm-opensearch-dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    depends_on:
+      - opensearch
+    ports:
+      - "5601:5601"
+
   backend:
     build: ./backend
     container_name: ferm-backend
     env_file:
       - ./backend/.env
+    environment:
+      OPENSEARCH_NODE: http://opensearch:9200
+      OPENSEARCH_LOG_INDEX: ferm-logs
     depends_on:
       mysql:
         condition: service_healthy
+      opensearch:
+        condition: service_started
     ports:
       - "3000:3000"
     volumes:
@@ -54,3 +86,4 @@ services:
 
 volumes:
   mysql_data:
+  opensearch_data:

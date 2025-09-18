@@ -75,6 +75,10 @@ components:
         type: { type: string, nullable: true }
         plantedAt: { type: string, format: date-time, nullable: true }
         matured: { type: boolean }
+            GardenConfig:
+      type: object
+      properties:
+        growthMinutes: { type: integer }
 paths:
   /auth/register:
     post:
@@ -194,11 +198,15 @@ paths:
     post:
       security: [{ bearerAuth: [] }]
       summary: Помыть овощ
-      parameters:
-        - in: path
-          name: inventoryId
-          required: true
-          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inventoryId]
+              properties:
+                inventoryId: { type: integer }
       responses:
         '200':
           description: OK
@@ -214,6 +222,16 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Plot' }
+    /garden/config:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Конфигурация грядок
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GardenConfig' }              
   /garden/plant:
     post:
       security: [{ bearerAuth: [] }]

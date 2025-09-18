@@ -12,12 +12,34 @@ import YAML from 'yaml';
 import swaggerUi from 'swagger-ui-express';
 import { getPool } from './db.js';
 import { SEED_TYPES, BASE_TYPES, ADV_TYPES, isAdv } from './utils.js';
+import { logInfo, logError, logRequest, logStartup, logShutdown } from './logger.js';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const started = Date.now();
+  res.on('finish', () => {
+    const payload = {
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      durationMs: Date.now() - started,
+      userId: req.user?.id || null,
+      ip: req.ip
+    };
+    const result = logRequest(payload);
+    if (result && typeof result.catch === 'function') {
+      result.catch((error) => {
+        console.error('Failed to log request:', error);
+      });
+    }
+  });
+  next();
+});
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
@@ -36,7 +58,10 @@ try {
   const openapiRaw = fs.readFileSync(openapiPath, 'utf-8');
   openapi = YAML.parse(openapiRaw);
 } catch (error) {
-  console.error('Failed to load OpenAPI specification:', error);
+  logError('Failed to load OpenAPI specification', {
+    error: error.message,
+    stack: error.stack
+  });
 }
 if (openapi) {
   app.get('/api/docs/openapi.json', (_req, res) => {
@@ -107,6 +132,7 @@ if (req.body.email === '' || req.body.password === '') {
   }
   const token = signToken({ id: userId, email });
   // Возвращаем токен, но фронт сам решит логиниться или нет
+    logInfo('User registered', { event: 'auth.register', userId, email });
   res.json({ token, message: 'Регистрация произошла успешно' });
 });
 
@@ -125,6 +151,7 @@ app.post('/api/auth/login',[
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return res.status(400).json({ error: 'Ошибка валидации' });
   const token = signToken(user);
+    logInfo('User logged in', { event: 'auth.login', userId: user.id });
   res.json({ token });
 });
 
@@ -253,6 +280,11 @@ app.get('/api/garden/plots', auth, async (req,res)=>{
   res.json(mapped);
 });
 
+app.get('/api/garden/config', auth, (_req,res)=>{
+  res.json({ growthMinutes: GROWTH_MINUTES });
+});
+
+
 app.post('/api/garden/plant', auth, async (req,res)=>{
   const { slot, inventoryId } = req.body || {};
   if (slot===undefined || !inventoryId) return res.status(400).json({ error:'Не заполнено поле' });
@@ -298,6 +330,30 @@ app.post('/api/shop/sell', auth, async (req,res)=>{
 
 app.get('/api/health', (_req,res)=> res.json({ ok:true }));
 
-app.listen(PORT, ()=>{
-  console.log('Backend started on', PORT);
+const server = app.listen(PORT, () => {
+  logStartup({ port: PORT, message: `Backend started on port ${PORT}` });
+});
+
+const handleShutdown = (signal) => {
+  logShutdown(signal, { signal });
+  server.close(() => process.exit(0));
+};
+
+process.on('SIGINT', handleShutdown);
+process.on('SIGTERM', handleShutdown);
+
+process.on('unhandledRejection', (reason) => {
+  logError('Unhandled promise rejection', {
+    event: 'unhandledRejection',
+    error: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  logError('Uncaught exception', {
+    event: 'uncaughtException',
+    error: error.message,
+    stack: error.stack
+  });
 });
