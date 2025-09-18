@@ -216,7 +216,7 @@ function Profile({onToast}:{onToast:(m:string)=>void}){
   }
   React.useEffect(()=>{ load() },[])
 
-  const save=async()=>{
+  const save=()=>{
     setErrs({})
     function setErr(k:string, msg:string){ setErrs((e:any)=>({...e,[k]:msg})) }
     if(isCool){
@@ -224,9 +224,14 @@ function Profile({onToast}:{onToast:(m:string)=>void}){
       if(!/^[A-Za-z]{2,15}$/.test(form.nickname)) return setErr('nickname','Ошибка валидации')
       }
     }
-    await api.put('/profile', { isCoolFarmer:isCool, ...form })
-    onToast('Данные сохранены')
-    load()
+    api.put('/profile', { isCoolFarmer:isCool, ...form })
+      .then(()=>{
+        onToast('Данные сохранены')
+        load()
+      })
+      .catch(()=>{
+        onToast('Не удалось сохранить данные')
+      })
   }
 
   if(!data) return <div className='card'>Загрузка...</div>

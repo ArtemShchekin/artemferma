@@ -221,6 +221,27 @@ app.get('/api/inventory', auth, async (req,res)=>{
   res.json({ seeds, vegRaw, vegWashed });
 });
 
+app.get('/api/inventory/vegetables/:inventoryId', auth, async (req,res)=>{
+  const { inventoryId: inventoryIdParam } = req.params || {};
+  const inventoryId = Number.parseInt(inventoryIdParam, 10);
+  if (!Number.isInteger(inventoryId)) return res.status(400).json({ error:'Не заполнено поле' });
+
+  const pool = await getPool();
+  const [[item]] = await pool.query('SELECT * FROM inventory WHERE id=? AND user_id=?',[inventoryId, req.user.id]);
+  if (!item || (item.kind!=='veg_raw' && item.kind!=='veg_washed')) {
+    return res.status(400).json({ error:'Ошибка валидации' });
+  }
+
+  res.json({
+    id: item.id,
+    userId: item.user_id,
+    washed: item.kind === 'veg_washed',
+    type: item.type,
+    status: item.status,
+    createdAt: item.created_at
+  });
+});
+
 app.patch('/api/inventory/wash/:inventoryId', auth, async (req,res)=>{
   const { inventoryId: inventoryIdParam } = req.params || {};
   const inventoryId = Number.parseInt(inventoryIdParam, 10);
