@@ -13,6 +13,11 @@
 docker compose up --build
 ```
 
+По умолчанию для OpenSearch задаётся безопасный пароль `ChangeMe123!`. При
+необходимости замените его, передав переменную окружения
+`OPENSEARCH_INITIAL_ADMIN_PASSWORD` при запуске `docker compose`.
+
+
 После успешного запуска будут доступны:
 
 - UI фермы — <http://localhost>
