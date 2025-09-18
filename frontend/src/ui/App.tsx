@@ -60,7 +60,7 @@ function persistToken(token: string){
 
 export default function App(){
   const [token,setTok] = React.useState<string|null>(getStoredToken())
-  const [active,setActive] = React.useState<Tab>('Профиль')
+  const [path,setPath] = React.useState<RoutePath>(getCurrentPath())
   const [toast,setToast] = React.useState<string|null>(null)
 
   React.useEffect(()=>{ setToken(token) },[token])
