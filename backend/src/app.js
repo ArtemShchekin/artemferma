@@ -12,7 +12,6 @@ export function createApp() {
 
   app.use(cors());
   app.use(express.json());
-  app.use(helmet());
   app.use(
     helmet({
       // Swagger UI использует встроенные скрипты/стили и отдельные ассеты,
