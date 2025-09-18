@@ -26,6 +26,7 @@ services:
     environment:
       - discovery.type=single-node
       # Полностью выключаем security/HTTPS → остаётся чистый HTTP:9200
+      - DISABLE_SECURITY_PLUGIN=true      # ← ЭТОГО НЕ ХВАТАЕТ
       - plugins.security.disabled=true
       - bootstrap.memory_lock=true
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
