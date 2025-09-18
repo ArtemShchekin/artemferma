@@ -54,7 +54,7 @@ services:
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
       # Если нужно отдавать из подпути (пример): http://host/opensearch
       - SERVER_BASEPATH=/opensearch
-      - SERVER_REWRITEBASEPATH=true
+      - SERVER_REWRITEBASEPATH=false
     depends_on:
       opensearch:
         condition: service_healthy

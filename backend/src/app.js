@@ -28,18 +28,23 @@ export function createApp() {
 
   const openapi = loadOpenApi();
   if (openapi) {
+    const swaggerServe = swaggerUi.serveFiles(openapi, {
+      swaggerOptions: {
+        persistAuthorization: true
+      }
+    });
+    const swaggerSetup = swaggerUi.setup(openapi, {
+      explorer: true,
+      swaggerOptions: {
+        persistAuthorization: true
+      }
+    });
+
     app.get('/api/docs/openapi.json', (_req, res) => {
       res.json(openapi);
     });
-    app.use(
-      '/api/docs',
-      swaggerUi.serve,
-      swaggerUi.setup(null, {
-        swaggerOptions: {
-          url: '/api/docs/openapi.json'
-        }
-      })
-    );
+
+    app.use('/api/docs', swaggerServe, swaggerSetup);
   }
 
   app.use('/api', routes);
