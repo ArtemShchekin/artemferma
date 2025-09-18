@@ -25,12 +25,10 @@ services:
     container_name: ferm-opensearch
     environment:
       - discovery.type=single-node
-      # Полностью выключаем security/HTTPS → остаётся чистый HTTP:9200
       - DISABLE_SECURITY_PLUGIN=true      # ← ЭТОГО НЕ ХВАТАЕТ
       - plugins.security.disabled=true
       - bootstrap.memory_lock=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=FermOpensearchP@ss1!"
+      - OPENSEARCH_JAVA_OPTS=-Xms384m -Xmx384m
     ulimits:
       memlock:
         soft: -1
@@ -44,8 +42,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:9200/_cluster/health >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 10s
+      retries: 30
+      start_period: 60s
     restart: unless-stopped
 
   opensearch-dashboards:
