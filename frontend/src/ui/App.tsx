@@ -37,16 +37,8 @@ export default function App(){
   const [token, setTok] = React.useState<string|null>(storedToken)
   const [active, setActive] = React.useState<Tab>('Профиль')
   const [toast, setToast] = React.useState<string|null>(null)
-  const [showAuth, setShowAuth] = React.useState(!storedToken)
-  const [authMode, setAuthMode] = React.useState<'login'|'register'>('login')
 
   React.useEffect(()=>{ setToken(token) },[token])
-  React.useEffect(()=>{
-    if(!token){
-      setShowAuth(true)
-      setAuthMode('login')
-    }
-  },[token])
   const logout=()=>{
     localStorage.removeItem('token')
     setTok(null)
@@ -58,13 +50,11 @@ export default function App(){
     show('Вход выполнен')
     saveToken(t)
     setTok(t)
-    setShowAuth(false)
   }
   const handleRegisterSuccess=(t:string)=>{
     show('Регистрация произошла успешно')
     saveToken(t)
     setTok(t)
-    setShowAuth(false)
   }
 
   const tabs: {k:Tab; icon:string}[] = [
@@ -91,14 +81,11 @@ export default function App(){
           <Inventory onToast={show} seedIcons={seedIcons}/>
         }
       </div>
-    </>:null}
-    {showAuth?
-      <AuthModal
-        mode={authMode}
-        onModeChange={setAuthMode}
+    </>:
+      <AuthPage
         onLoginSuccess={handleLoginSuccess}
         onRegisterSuccess={handleRegisterSuccess}
-      />:null}
+      />}
     {toast? <div className="toast">{toast}</div>: null}
   </div>
 }
@@ -122,12 +109,25 @@ function InputField({label,type='text',value,onChange,error}:{label:string;type?
 }
 
 // === Auth page ===
-function AuthModal({mode,onModeChange,onLoginSuccess,onRegisterSuccess}:{mode:'login'|'register';onModeChange:(m:'login'|'register')=>void;onLoginSuccess:(t:string)=>void;onRegisterSuccess:(t:string)=>void}){
-  return <div className='modal-backdrop auth-overlay'>
-    <div className='card modal auth-modal'>
+function AuthPage({onLoginSuccess,onRegisterSuccess}:{onLoginSuccess:(t:string)=>void;onRegisterSuccess:(t:string)=>void}){
+  const [mode,setMode]=React.useState<'login'|'register'>('login')
+  return <div className='auth-page'>
+    <div className='card auth-panel'>
+      <div className='auth-tabs'>
+        <button
+          type='button'
+          className={'auth-tab '+(mode==='login'?'active':'')}
+          onClick={()=>setMode('login')}
+        >Вход</button>
+        <button
+          type='button'
+          className={'auth-tab '+(mode==='register'?'active':'')}
+          onClick={()=>setMode('register')}
+        >Регистрация</button>
+      </div>
       {mode==='login'?
-        <LoginForm onSuccess={onLoginSuccess} onSwitchToRegister={()=>onModeChange('register')}/>:
-        <RegisterForm onSuccess={onRegisterSuccess} onSwitchToLogin={()=>onModeChange('login')}/>
+        <LoginForm onSuccess={onLoginSuccess} onSwitchToRegister={()=>setMode('register')}/>:
+        <RegisterForm onSuccess={onRegisterSuccess} onSwitchToLogin={()=>setMode('login')}/>
       }
     </div>
   </div>
