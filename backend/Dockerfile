@@ -1,6 +1,6 @@
 FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache curl
+# RUN apk add --no-cache curl
 
 # Install dependencies using lockfile when present
 COPY package*.json ./

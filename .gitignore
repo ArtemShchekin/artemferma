@@ -20,3 +20,7 @@ backend/.env
 docker-compose.yml.bak-*
 nginx/nginx.conf.bak-*
 *.log
+
+# nginx backups
+nginx/nginx.conf.bak*
+*.bak
