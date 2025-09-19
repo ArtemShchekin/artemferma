@@ -1,6 +1,6 @@
 import React from 'react';
 import { api } from '../../api';
-import { ToastFn } from '../../types';
+import { ToastFn } from '../../../types';
 import { InputField } from '../InputField';
 
 interface ProfileResponse {

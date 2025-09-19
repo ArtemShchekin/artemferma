@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { api } from '../../api';
-import { ToastFn } from '../../types';
+import { ToastFn } from '../../../types';
 import icBuy from '../../assets/btn-buy.svg';
 import icSell from '../../assets/btn-sell.svg';
 import {
