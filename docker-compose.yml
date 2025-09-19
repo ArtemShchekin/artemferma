@@ -80,12 +80,12 @@ services:
       - "3000:3000"
     volumes:
       - ./backend/openapi.yaml:/app/openapi.yaml:ro
-healthcheck:
-  test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
-  interval: 10s
-  timeout: 3s
-  retries: 5
-  start_period: 10s
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   frontend:
     build: ./frontend
