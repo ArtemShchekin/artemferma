@@ -123,6 +123,7 @@ services:
     volumes:
       - ./nginx/logs:/var/log/nginx:ro
       - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 
 volumes:
