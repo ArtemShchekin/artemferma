@@ -1,9 +1,9 @@
-
 import React from 'react';
-import { api } from '../../api';
+import { api } from '../../../api';
 import { ToastFn } from '../../../types';
 import icBuy from '../../assets/btn-buy.svg';
 import icSell from '../../assets/btn-sell.svg';
+
 import {
   ADVANCED_SEED_TYPES,
   BASE_SEED_TYPES,

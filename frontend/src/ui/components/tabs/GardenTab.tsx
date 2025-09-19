@@ -1,8 +1,9 @@
 import React from 'react';
-import { api } from '../../api';
+import { api } from '../../../api';
 import { ToastFn } from '../../../types';
 import icPlant from '../../assets/btn-plant.svg';
 import { SEED_ICONS, SEED_NAMES, SeedType } from '../../../constants/seeds';
+
 
 interface Plot {
   slot: number;
