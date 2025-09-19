@@ -1,7 +1,7 @@
 import React from 'react';
-import AuthPage from './components/AuthPage';
-import MainLayout from './components/MainLayout';
-import { useAuthToken } from './hooks/useAuthToken';
+import AuthPage from './ui/components/AuthPage';
+import MainLayout from './ui/components/MainLayout';
+import { useAuthToken } from './ui/hooks/useAuthToken';
 
 export default function App() {
   const { login, logout, isAuthenticated } = useAuthToken();
