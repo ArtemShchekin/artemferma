@@ -8,23 +8,27 @@ include_containers = ["ferm-nginx"]
 type   = "remap"
 inputs = ["nginx_docker"]
 source = '''
-if exists(.message) {
-  parsed, err = parse_json(.message)
-  if err == null { . = merge(., parsed) }
+# парсим JSON из строки docker-лога
+parsed, err = parse_json(.message)
+if err == null {
+  . = merge(., parsed)
+  del(.message)
 }
-# Нормализуем время, если было поле "time"
+
+# нормализуем время, если есть
 if exists(.time) {
   ts, err = to_timestamp(.time)
-  if err == null { ."@timestamp" = ts }
+  if err == null { .["@timestamp"] = ts }
 }
+
 .source = "nginx"
 '''
 
 # Шлём в OpenSearch в индекс ferm-logs
 [sinks.opensearch]
-type       = "elasticsearch"
-inputs     = ["nginx_json"]
-endpoints  = ["http://opensearch:9200"]
-index      = "ferm-logs"
-mode       = "bulk"
-compression = "none"
+type   = "elasticsearch"
+inputs = ["nginx_json"]
+endpoint = "http://opensearch:9200"   # ← можно вместо endpoints=[]
+index  = "ferm-logs"
+mode   = "bulk"
+healthcheck = true
