@@ -1,22 +1,31 @@
-# Источник — файл access.json.log
-[sources.nginx_logs]
-type = "file"
-include = ["/var/log/nginx/access.json.log"]
-read_from = "beginning"
+# Читаем stdout контейнера ferm-nginx
+[sources.nginx]
+type = "docker_logs"
+include_containers = ["ferm-nginx"]
+include_stdout = true
+include_stderr = false
 
-# Декодируем строки как JSON
-[transforms.nginx_json]
+# Отфильтровываем только JSON-строки (наши access_log)
+[transforms.only_json]
+type = "filter"
+inputs = ["nginx"]
+condition = '.message.starts_with("{")'
+
+# Парсим JSON и выставляем @timestamp
+[transforms.parse]
 type = "remap"
-inputs = ["nginx_logs"]
+inputs = ["only_json"]
 source = '''
-structured = parse_json!(.message)
-. = merge(., structured)
+. = parse_json!(.message)
+."@timestamp" = .time
+del(.time)
+.service = "nginx"
 '''
 
-# Приёмник — OpenSearch
+# Пишем в OpenSearch (совместимый sink Elasticsearch)
 [sinks.opensearch]
 type = "elasticsearch"
-inputs = ["nginx_json"]
-endpoint = "http://opensearch:9200"
+inputs = ["parse"]
+endpoints = ["http://opensearch:9200"]
 index = "ferm-logs"
 mode = "bulk"

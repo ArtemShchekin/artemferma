@@ -44,7 +44,6 @@ services:
       start_period: 60s
     restart: unless-stopped
 
-
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.13.0
     container_name: ferm-opensearch-dashboards
@@ -115,15 +114,16 @@ services:
       - ./nginx/logs:/var/log/nginx
     restart: unless-stopped
 
-    vector:
-      image: timberio/vector:0.40.0-alpine
-      container_name: ferm-vector
-      volumes:
+  vector:
+    image: timberio/vector:0.40.0-alpine
+    container_name: ferm-vector
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    volumes:
       - ./nginx/logs:/var/log/nginx:ro
       - ./vector/vector.toml:/etc/vector/vector.toml:ro
-      depends_on:
-      - opensearch
-      restart: unless-stopped
+    restart: unless-stopped
 
 volumes:
   mysql_data:
