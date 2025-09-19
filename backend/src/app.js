@@ -13,24 +13,20 @@ function setupSwagger(app) {
     return;
   }
 
-  const swaggerServe = swaggerUi.serveFiles(openapi, {
-    swaggerOptions: {
-      persistAuthorization: true
-    }
-  });
-
-  const swaggerSetup = swaggerUi.setup(openapi, {
-    explorer: true,
-    swaggerOptions: {
-      persistAuthorization: true
-    }
-  });
-
   app.get('/api/docs/openapi.json', (_req, res) => {
     res.json(openapi);
   });
 
-  app.use('/api/docs', swaggerServe, swaggerSetup);
+  app.use(
+    '/api/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(openapi, {
+      explorer: true,
+      swaggerOptions: {
+        persistAuthorization: true
+      }
+    })
+  );
 }
 
 export function createApp() {
