@@ -1,5 +1,5 @@
 import React from 'react';
-import { setToken } from '../api';
+import { setToken } from '../../api';
 
 const STORAGE_KEY = 'token';
 
