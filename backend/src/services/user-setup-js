@@ -52,16 +52,6 @@ export async function ensurePlotsWithConnection(connection, userId) {
   return reloaded;
 }
 
-export async function ensureProfileInitialized(userId) {
-  return withTransaction(async (connection) => {
-    return ensureProfileWithConnection(connection, userId);
-  });
-}
-
-export async function ensurePlotsInitialized(userId) {
-  return withTransaction((connection) => ensurePlotsWithConnection(connection, userId));
-}
-
 export async function ensureProfileWithConnection(connection, userId) {
   const [[profile]] = await connection.query(
     'SELECT * FROM profiles WHERE user_id = ? FOR UPDATE',
@@ -80,4 +70,14 @@ export async function ensureProfileWithConnection(connection, userId) {
   await ensurePlotsWithConnection(connection, userId);
 
   return freshProfile;
+}
+
+export async function ensureProfileInitialized(userId) {
+  return withTransaction(async (connection) => {
+    return ensureProfileWithConnection(connection, userId);
+  });
+}
+
+export async function ensurePlotsInitialized(userId) {
+  return withTransaction((connection) => ensurePlotsWithConnection(connection, userId));
 }
