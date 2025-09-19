@@ -53,8 +53,8 @@ services:
       # Выключаем security-плагин для Dashboards
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
       # Если нужно отдавать из подпути (пример): http://host/opensearch
-      - SERVER_BASEPATH=/opensearch
-      - SERVER_REWRITEBASEPATH=false
+      - OPENSEARCH_DASHBOARDS_SERVER_BASEPATH=/opensearch
+      - OPENSEARCH_DASHBOARDS_SERVER_REWRITEBASEPATH=false
     depends_on:
       opensearch:
         condition: service_healthy
