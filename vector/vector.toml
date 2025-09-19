@@ -1,31 +1,30 @@
-# Читаем stdout контейнера ferm-nginx
-[sources.nginx]
+# Читаем stdout/stderr контейнера ferm-nginx
+[sources.nginx_docker]
 type = "docker_logs"
 include_containers = ["ferm-nginx"]
-include_stdout = true
-include_stderr = false
 
-# Отфильтровываем только JSON-строки (наши access_log)
-[transforms.only_json]
-type = "filter"
-inputs = ["nginx"]
-condition = '.message.starts_with("{")'
-
-# Парсим JSON и выставляем @timestamp
-[transforms.parse]
-type = "remap"
-inputs = ["only_json"]
+# Пытаемся распарсить строку как JSON (ты уже пишешь nginx access_log в JSON)
+[transforms.nginx_json]
+type   = "remap"
+inputs = ["nginx_docker"]
 source = '''
-. = parse_json!(.message)
-."@timestamp" = .time
-del(.time)
-.service = "nginx"
+if exists(.message) {
+  parsed, err = parse_json(.message)
+  if err == null { . = merge(., parsed) }
+}
+# Нормализуем время, если было поле "time"
+if exists(.time) {
+  ts, err = to_timestamp(.time)
+  if err == null { ."@timestamp" = ts }
+}
+.source = "nginx"
 '''
 
-# Пишем в OpenSearch (совместимый sink Elasticsearch)
+# Шлём в OpenSearch в индекс ferm-logs
 [sinks.opensearch]
-type = "elasticsearch"
-inputs = ["parse"]
-endpoints = ["http://opensearch:9200"]
-index = "ferm-logs"
-mode = "bulk"
+type       = "elasticsearch"
+inputs     = ["nginx_json"]
+endpoints  = ["http://opensearch:9200"]
+index      = "ferm-logs"
+mode       = "bulk"
+compression = "none"
