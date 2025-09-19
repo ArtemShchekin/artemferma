@@ -1,21 +1,21 @@
-# Читаем stdout/stderr контейнера ferm-nginx
+# === Source: Docker logs from ferm-nginx (stdout/stderr) ===
 [sources.nginx_docker]
 type = "docker_logs"
 include_containers = ["ferm-nginx"]
 
-# Пытаемся распарсить строку как JSON (ты уже пишешь nginx access_log в JSON)
+# === Transform: parse JSON lines from Nginx access_log ===
 [transforms.nginx_json]
 type   = "remap"
 inputs = ["nginx_docker"]
 source = '''
-# парсим JSON из строки docker-лога
+# попытка распарсить как JSON
 parsed, err = parse_json(.message)
 if err == null {
   . = merge(., parsed)
   del(.message)
 }
 
-# нормализуем время, если есть
+# нормализуем timestamp, если есть поле "time"
 if exists(.time) {
   ts, err = to_timestamp(.time)
   if err == null { .["@timestamp"] = ts }
@@ -24,11 +24,11 @@ if exists(.time) {
 .source = "nginx"
 '''
 
-# Шлём в OpenSearch в индекс ferm-logs
+# === Sink: send to OpenSearch ===
 [sinks.opensearch]
-type   = "elasticsearch"
-inputs = ["nginx_json"]
-endpoint = "http://opensearch:9200"   # ← можно вместо endpoints=[]
-index  = "ferm-logs"
-mode   = "bulk"
-healthcheck = true
+type     = "elasticsearch"
+inputs   = ["nginx_json"]
+endpoint = "http://opensearch:9200"
+index    = "ferm-logs"
+mode     = "bulk"
+compression = "none"

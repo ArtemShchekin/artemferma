@@ -5,7 +5,11 @@ services:
     depends_on:
       opensearch:
         condition: service_healthy
+      nginx:
+        condition: service_started
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./vector/vector.toml:/etc/vector/vector.toml:ro
+    environment:
+      - VECTOR_LOG=info
     restart: unless-stopped
