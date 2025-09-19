@@ -81,7 +81,7 @@ services:
     volumes:
       - ./backend/openapi.yaml:/app/openapi.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 30
