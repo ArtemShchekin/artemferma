@@ -1,0 +1,22 @@
+# Источник — файл access.json.log
+[sources.nginx_logs]
+type = "file"
+include = ["/var/log/nginx/access.json.log"]
+read_from = "beginning"
+
+# Декодируем строки как JSON
+[transforms.nginx_json]
+type = "remap"
+inputs = ["nginx_logs"]
+source = '''
+structured = parse_json!(.message)
+. = merge(., structured)
+'''
+
+# Приёмник — OpenSearch
+[sinks.opensearch]
+type = "elasticsearch"
+inputs = ["nginx_json"]
+endpoint = "http://opensearch:9200"
+index = "ferm-logs"
+mode = "bulk"
