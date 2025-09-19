@@ -2,17 +2,28 @@ import { Client } from '@opensearch-project/opensearch';
 
 import config from '../config/index.js';
 
-
 let client;
 let indexPrepared = false;
 let ensureIndexPromise;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const isOpenSearchEnabled = Boolean(config.opensearch.enabled && config.opensearch.node);
+
+function printToConsole(level, message, extra) {
+  const payload = extra ? ` ${JSON.stringify(extra)}` : '';
+  if (level === 'error') {
+    console.error(message + payload);
+  } else {
+    console.log(message + payload);
+  }
+}
+
 function getClient() {
-  if (!config.opensearch.node) {
+  if (!isOpenSearchEnabled) {
     return null;
   }
+
   if (client) {
     return client;
   }
@@ -30,7 +41,7 @@ function getClient() {
     }
     client = new Client(options);
   } catch (error) {
-    console.error('Failed to initialize OpenSearch client:', error);
+    printToConsole('error', 'Failed to initialize OpenSearch client', { error: error.message });
     client = null;
   }
 
@@ -68,6 +79,10 @@ async function createIndexWithRetry(osClient) {
         { ignore: [400] }
       );
       indexPrepared = true;
+      printToConsole('info', 'OpenSearch log index ready', {
+        event: 'opensearch.index_ready',
+        index: config.opensearch.index
+      });
       return;
     } catch (error) {
       if (attempt === attempts) {
@@ -89,7 +104,7 @@ async function ensureIndex() {
   if (!ensureIndexPromise) {
     ensureIndexPromise = createIndexWithRetry(osClient)
       .catch((error) => {
-        console.error('Failed to ensure OpenSearch index:', error);
+        printToConsole('error', 'Failed to ensure OpenSearch index', { error: error.message });
       })
       .finally(() => {
         ensureIndexPromise = undefined;
@@ -100,6 +115,10 @@ async function ensureIndex() {
 }
 
 async function sendToOpenSearch(body) {
+    if (!isOpenSearchEnabled) {
+    return;
+  }
+
   const osClient = getClient();
   if (!osClient) {
     return;
@@ -112,7 +131,7 @@ async function sendToOpenSearch(body) {
     }    
     await osClient.index({ index: config.opensearch.index, body });
   } catch (error) {
-    console.error('Failed to send log to OpenSearch:', error);
+    printToConsole('error', 'Failed to send log to OpenSearch', { error: error.message });
   }
 }
 
@@ -127,13 +146,13 @@ function baseDocument(level, message, extra = {}) {
 
 export function logInfo(message, extra) {
   const body = baseDocument('info', message, extra);
-  console.log(message, extra ? JSON.stringify(extra) : '');
+  printToConsole('info', message, extra);
   return sendToOpenSearch(body);
 }
 
 export function logError(message, extra) {
   const body = baseDocument('error', message, extra);
-  console.error(message, extra?.error || '');
+  printToConsole('error', message, extra);
   return sendToOpenSearch(body);
 }
 

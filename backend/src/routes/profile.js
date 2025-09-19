@@ -2,26 +2,16 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool } from '../db/pool.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
-import config from '../config/index.js';
+import { ensureProfileInitialized } from '../services/user-setup.js';
+
 
 const router = Router();
 
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const pool = getPool();
-    let [[profile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
+    const profile = await ensureProfileInitialized(req.user.id);
 
-    if (!profile) {
-      await pool.query('INSERT INTO profiles (user_id) VALUES (?)', [req.user.id]);
-      if (config.garden.slots > 0) {
-        const slots = Array.from({ length: config.garden.slots }, (_, index) => index + 1);
-        const placeholders = slots.map(() => '(?, ?)').join(', ');
-        const params = slots.flatMap((slot) => [req.user.id, slot]);
-        await pool.query(`INSERT INTO plots (user_id, slot) VALUES ${placeholders}`, params);
-      }
-      [[profile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
-    }
 
     const level = profile.sold_count >= 50 ? 2 : 1;
 
@@ -47,7 +37,7 @@ router.put(
     if (isCoolFarmer === undefined) {
       throw new RequiredFieldError();
     }
-
+    await ensureProfileInitialized(req.user.id);
     const pool = getPool();
 
     if (isCoolFarmer) {

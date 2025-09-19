@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const int = (value, fallback) => {
+const toInt = (value, fallback) => {
   if (value === undefined || value === null || value === '') {
     return fallback;
   }
@@ -10,38 +10,67 @@ const int = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toBool = (value, fallback) => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'y'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'n'].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+};
+
+const getString = (value, fallback = '') => {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  const trimmed = String(value).trim();
+  return trimmed.length ? trimmed : fallback;
+};
+
 const config = {
-  env: process.env.NODE_ENV || 'development',
-  port: int(process.env.PORT, 3000),
-  jwtSecret: process.env.JWT_SECRET || 'devsecret',
+  env: getString(process.env.NODE_ENV, 'development'),
+  port: toInt(process.env.PORT, 3000),
+  jwtSecret: getString(process.env.JWT_SECRET, 'devsecret'),
   database: {
-    host: process.env.DB_HOST || 'mysql',
-    port: int(process.env.DB_PORT, 3306),
-    user: process.env.DB_USER || 'ferm',
-    password: process.env.DB_PASSWORD || 'fermpass',
-    database: process.env.DB_NAME || 'fermdb',
-    connectionLimit: int(process.env.DB_CONNECTION_LIMIT, 10)
+    host: getString(process.env.DB_HOST, 'mysql'),
+    port: toInt(process.env.DB_PORT, 3306),
+    user: getString(process.env.DB_USER, 'ferm'),
+    password: getString(process.env.DB_PASSWORD, 'fermpass'),
+    database: getString(process.env.DB_NAME, 'fermdb'),
+    connectionLimit: toInt(process.env.DB_CONNECTION_LIMIT, 10),
+    connectRetryAttempts: toInt(process.env.DB_CONNECT_RETRY_ATTEMPTS, 30),
+    connectRetryDelayMs: toInt(process.env.DB_CONNECT_RETRY_DELAY_MS, 1000)
   },
   prices: {
-    purchaseBase: int(process.env.PURCHASE_BASE_PRICE, 2),
-    purchaseAdv: int(process.env.PURCHASE_ADV_PRICE, 5),
-    saleBase: int(process.env.SALE_BASE_PRICE, 4),
-    saleAdv: int(process.env.SALE_ADV_PRICE, 10)
+    purchaseBase: toInt(process.env.PURCHASE_BASE_PRICE, 2),
+    purchaseAdv: toInt(process.env.PURCHASE_ADV_PRICE, 5),
+    saleBase: toInt(process.env.SALE_BASE_PRICE, 4),
+    saleAdv: toInt(process.env.SALE_ADV_PRICE, 10)
   },
   garden: {
-    slots: int(process.env.GARDEN_SLOTS, 6),
-    growthMinutes: int(process.env.GROWTH_MINUTES, 10)
+    slots: toInt(process.env.GARDEN_SLOTS, 6),
+    growthMinutes: toInt(process.env.GROWTH_MINUTES, 10)
   },
   opensearch: {
-    enabled: process.env.OPENSEARCH_ENABLED !== 'false',
-    node: process.env.OPENSEARCH_NODE || 'http://opensearch:9200',
-    index: process.env.OPENSEARCH_LOG_INDEX || 'ferm-logs',
-    username: process.env.OPENSEARCH_USERNAME || '',
-    password: process.env.OPENSEARCH_PASSWORD || '',
-    rejectUnauthorized: process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED !== 'false',
-    indexRetryAttempts: int(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
-    indexRetryDelayMs: int(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000)
+    enabled: toBool(process.env.OPENSEARCH_ENABLED, true),
+    node: getString(process.env.OPENSEARCH_NODE, 'http://opensearch:9200'),
+    index: getString(process.env.OPENSEARCH_LOG_INDEX, 'ferm-logs'),
+    username: getString(process.env.OPENSEARCH_USERNAME),
+    password: getString(process.env.OPENSEARCH_PASSWORD),
+    rejectUnauthorized: toBool(process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED, true),
+    indexRetryAttempts: toInt(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
+    indexRetryDelayMs: toInt(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000)
   }
 };
+
+if (!config.opensearch.enabled) {
+  config.opensearch.node = '';
+}
 
 export default config;

@@ -1,0 +1,83 @@
+import config from '../config/index.js';
+import { withTransaction } from '../db/pool.js';
+
+function buildMissingSlots(existingSlots) {
+  if (config.garden.slots <= 0) {
+    return [];
+  }
+
+  const expectedSlots = new Set(existingSlots);
+  const missing = [];
+
+  for (let slot = 1; slot <= config.garden.slots; slot += 1) {
+    if (!expectedSlots.has(slot)) {
+      missing.push(slot);
+    }
+  }
+
+  return missing;
+}
+
+export async function ensurePlotsWithConnection(connection, userId) {
+  if (config.garden.slots <= 0) {
+    return [];
+  }
+
+  const [plots] = await connection.query(
+    `SELECT slot, type, planted_at, harvested
+     FROM plots
+     WHERE user_id = ?
+     ORDER BY slot ASC
+     FOR UPDATE`,
+    [userId]
+  );
+
+  const missingSlots = buildMissingSlots(plots.map((plot) => plot.slot));
+  if (missingSlots.length === 0) {
+    return plots;
+  }
+
+  const placeholders = missingSlots.map(() => '(?, ?)').join(', ');
+  const params = missingSlots.flatMap((slot) => [userId, slot]);
+  await connection.query(`INSERT INTO plots (user_id, slot) VALUES ${placeholders}`, params);
+
+  const [reloaded] = await connection.query(
+    `SELECT slot, type, planted_at, harvested
+     FROM plots
+     WHERE user_id = ?
+     ORDER BY slot ASC`,
+    [userId]
+  );
+
+  return reloaded;
+}
+
+export async function ensureProfileInitialized(userId) {
+  return withTransaction(async (connection) => {
+    return ensureProfileWithConnection(connection, userId);
+  });
+}
+
+export async function ensurePlotsInitialized(userId) {
+  return withTransaction((connection) => ensurePlotsWithConnection(connection, userId));
+}
+
+export async function ensureProfileWithConnection(connection, userId) {
+  const [[profile]] = await connection.query(
+    'SELECT * FROM profiles WHERE user_id = ? FOR UPDATE',
+    [userId]
+  );
+
+  if (!profile) {
+    await connection.query('INSERT INTO profiles (user_id) VALUES (?)', [userId]);
+  }
+
+  const [[freshProfile]] = await connection.query(
+    'SELECT * FROM profiles WHERE user_id = ?',
+    [userId]
+  );
+
+  await ensurePlotsWithConnection(connection, userId);
+
+  return freshProfile;
+}

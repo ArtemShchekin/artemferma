@@ -1,28 +1,32 @@
-
 import { createApp } from './app.js';
 import config from './config/index.js';
-import { ensureDatabaseConnection, closePool } from './db/pool.js';
+import { closePool, ensureDatabaseConnection } from './db/pool.js';
 import { logError, logShutdown, logStartup } from './logging/index.js';
 
 async function bootstrap() {
+  await ensureDatabaseConnection();
 
-  try {
-    await ensureDatabaseConnection();
-  } catch (error) {
-    logError('Failed to establish database connection', {
-      event: 'startup.database_error',
-      error: error.message,
-      stack: error.stack
-    });
-    process.exit(1);
-  }
 
   const app = createApp();
   const server = app.listen(config.port, () => {
     logStartup({ port: config.port, message: `Backend started on port ${config.port}` });
   });
 
-let shuttingDown = false;
+  let shuttingDown = false;
+
+  const finishShutdown = async () => {
+    try {
+      await closePool();
+    } catch (error) {
+      logError('Failed to close database pool during shutdown', {
+        event: 'shutdown.pool_error',
+        error: error.message,
+        stack: error.stack
+      });
+    } finally {
+      process.exit(0);
+    }
+  };
   const shutdown = (signal) => {
     if (shuttingDown) {
       return;
@@ -31,20 +35,24 @@ let shuttingDown = false;
 
     logShutdown(signal, { signal });
 
-    const finish = () => {
-      closePool()
-        .catch((error) => {
-          logError('Failed to close database pool during shutdown', {
-            event: 'shutdown.pool_error',
-            error: error.message,
-            stack: error.stack
-          });
-        })
-        .finally(() => process.exit(0));
-    };
+    server.close(() => {
+      finishShutdown().catch((error) => {
+        logError('Graceful shutdown failed', {
+          event: 'shutdown.failed',
+          error: error.message,
+          stack: error.stack
+        });
+        process.exit(1);
+      });
+    });
 
-    server.close(finish);
-    setTimeout(finish, 10000).unref();
+    setTimeout(() => {
+      logError('Forcing shutdown after timeout', {
+        event: 'shutdown.timeout',
+        timeoutMs: 10000
+      });
+      finishShutdown().catch(() => process.exit(1));
+    }, 10000).unref();
   };
 
   process.on('SIGINT', shutdown);
@@ -73,6 +81,6 @@ bootstrap().catch((error) => {
     error: error.message,
     stack: error.stack
   });
-    process.exit(1);
+  process.exit(1);
 
 });

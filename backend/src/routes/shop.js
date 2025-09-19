@@ -4,6 +4,7 @@ import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
+import { ensureProfileWithConnection } from '../services/user-setup.js';
 
 const router = Router();
 
@@ -29,13 +30,7 @@ router.post(
     }
 
     await withTransaction(async (connection) => {
-      const [[profile]] = await connection.query(
-        'SELECT balance, sold_count FROM profiles WHERE user_id = ? FOR UPDATE',
-        [req.user.id]
-      );
-      if (!profile) {
-        throw new ValidationError();
-      }
+      const profile = await ensureProfileWithConnection(connection, req.user.id);
 
       const level = profile.sold_count >= 50 ? 2 : 1;
       if (isAdvancedSeed(type) && level < 2) {
@@ -79,7 +74,7 @@ router.post(
       if (!item || item.kind !== 'veg_washed') {
         throw new ValidationError();
       }
-
+      await ensureProfileWithConnection(connection, req.user.id);
       const price = isAdvancedSeed(item.type) ? config.prices.saleAdv : config.prices.saleBase;
 
       await connection.query('DELETE FROM inventory WHERE id = ?', [id]);

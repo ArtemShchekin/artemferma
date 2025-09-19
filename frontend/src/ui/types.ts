@@ -1,0 +1,1 @@
+export type ToastFn = (message: string) => void;

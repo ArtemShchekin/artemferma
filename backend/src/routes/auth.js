@@ -4,10 +4,10 @@ import { body } from 'express-validator';
 import { asyncHandler } from '../utils/async-handler.js';
 import { assertValid } from '../utils/validation.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
-import { getPool, withTransaction } from '../db/pool.js';
-import config from '../config/index.js';
+import { queryOne, withTransaction } from '../db/pool.js';
 import { signToken } from '../utils/jwt.js';
 import { logInfo } from '../logging/index.js';
+import { ensureProfileWithConnection } from '../services/user-setup.js';
 
 const router = Router();
 
@@ -41,14 +41,7 @@ router.post(
 
       const userId = result.insertId;
 
-      await connection.query('INSERT INTO profiles (user_id) VALUES (?)', [userId]);
-
-      const slots = Array.from({ length: config.garden.slots }, (_, index) => index + 1);
-      if (slots.length > 0) {
-        const placeholders = slots.map(() => '(?, ?)').join(', ');
-        const params = slots.flatMap((slot) => [userId, slot]);
-        await connection.query(`INSERT INTO plots (user_id, slot) VALUES ${placeholders}`, params);
-      }
+      await ensureProfileWithConnection(connection, userId);
 
       const token = signToken({ id: userId, email });
       return { userId, token };
@@ -70,13 +63,11 @@ router.post(
       throw new RequiredFieldError();
     }
 
-    const pool = getPool();
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (!rows.length) {
+    const user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
       throw new ValidationError();
     }
 
-    const user = rows[0];
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       throw new ValidationError();

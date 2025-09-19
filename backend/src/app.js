@@ -7,11 +7,41 @@ import { requestLogger } from './middleware/request-logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { loadOpenApi } from './utils/openapi.js';
 
+function setupSwagger(app) {
+  const openapi = loadOpenApi();
+  if (!openapi) {
+    return;
+  }
+
+  const swaggerServe = swaggerUi.serveFiles(openapi, {
+    swaggerOptions: {
+      persistAuthorization: true
+    }
+  });
+
+  const swaggerSetup = swaggerUi.setup(openapi, {
+    explorer: true,
+    swaggerOptions: {
+      persistAuthorization: true
+    }
+  });
+
+  app.get('/api/docs/openapi.json', (_req, res) => {
+    res.json(openapi);
+  });
+
+  app.use('/api/docs', swaggerServe, swaggerSetup);
+}
+
 export function createApp() {
   const app = express();
 
+  app.disable('x-powered-by');
+  app.set('trust proxy', true);
+
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: false }));
   app.use(
     helmet({
       // Swagger UI использует встроенные скрипты/стили и отдельные ассеты,
@@ -23,28 +53,10 @@ export function createApp() {
       crossOriginOpenerPolicy: false
     })
   );  
+
   app.use(requestLogger);
 
-  const openapi = loadOpenApi();
-  if (openapi) {
-    const swaggerServe = swaggerUi.serveFiles(openapi, {
-      swaggerOptions: {
-        persistAuthorization: true
-      }
-    });
-    const swaggerSetup = swaggerUi.setup(openapi, {
-      explorer: true,
-      swaggerOptions: {
-        persistAuthorization: true
-      }
-    });
-
-    app.get('/api/docs/openapi.json', (_req, res) => {
-      res.json(openapi);
-    });
-
-    app.use('/api/docs', swaggerServe, swaggerSetup);
-  }
+  setupSwagger(app);
 
   app.use('/api', routes);
   app.use(errorHandler);

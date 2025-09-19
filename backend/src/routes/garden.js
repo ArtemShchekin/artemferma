@@ -1,31 +1,18 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
-import { getPool, withTransaction } from '../db/pool.js';
+import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
+import { ensurePlotsInitialized } from '../services/user-setup.js';
+
 
 const router = Router();
 
 router.get(
   '/plots',
   asyncHandler(async (req, res) => {
-    const pool = getPool();
-    let [plots] = await pool.query(
-      'SELECT slot, type, planted_at, harvested FROM plots WHERE user_id = ? ORDER BY slot ASC',
-      [req.user.id]
-    );
-
-    if (plots.length === 0 && config.garden.slots > 0) {
-      const slots = Array.from({ length: config.garden.slots }, (_, index) => index + 1);
-      const placeholders = slots.map(() => '(?, ?)').join(', ');
-      const params = slots.flatMap((slot) => [req.user.id, slot]);
-      await pool.query(`INSERT INTO plots (user_id, slot) VALUES ${placeholders}`, params);
-      [plots] = await pool.query(
-        'SELECT slot, type, planted_at, harvested FROM plots WHERE user_id = ? ORDER BY slot ASC',
-        [req.user.id]
-      );
-    }
+    const plots = await ensurePlotsInitialized(req.user.id);
 
     const mapped = plots.map((plot) => ({
       slot: plot.slot,
