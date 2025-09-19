@@ -5,13 +5,21 @@ export function requestLogger(req, res, next) {
   res.on('finish', () => {
     try {
       const durationMs = Date.now() - started;
+            const xForwardedFor = req.headers['x-forwarded-for'];
+      let ip = req.ip;
+      if (xForwardedFor) {
+        const forwardedIp = xForwardedFor.toString().split(',')[0].trim();
+        if (forwardedIp) {
+          ip = forwardedIp;
+        }
+      }
       const payload = {
         method: req.method,
         path: req.originalUrl,
         status: res.statusCode,
         durationMs,
         userId: req.user?.id || null,
-        ip: req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() || req.ip
+        ip
       };
       const result = logRequest(payload);
       if (result && typeof result.catch === 'function') {
