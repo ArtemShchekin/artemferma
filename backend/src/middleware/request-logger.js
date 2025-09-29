@@ -7,6 +7,13 @@ export function requestLogger(req, res, next) {
       const durationMs = Date.now() - started;
       const xForwardedForHeader = req.headers?.['x-forwarded-for'];
       let ip = req.ip;
+      const originalUrl = req.originalUrl || req.url || '';
+      const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
+
+      if (normalizedPath === '/api/health') {
+        return;
+      }
+
 
       if (xForwardedForHeader !== undefined && xForwardedForHeader !== null) {
         const headerValue = Array.isArray(xForwardedForHeader)
