@@ -12,12 +12,14 @@ import {
   SeedType
 } from '../../constants/seeds';
 
+interface PricesResponse {
+  purchase: { basePrice: number; advPrice: number };
+  sale: { basePrice: number; advPrice: number };
+}
+
 interface ProfileSummary {
   level: number;
-  prices: {
-    purchase: { basePrice: number; advPrice: number };
-    sale: { basePrice: number; advPrice: number };
-  };
+  prices?: PricesResponse;
 }
 
 interface InventoryItem {
@@ -40,50 +42,72 @@ interface ShopTabProps {
 export function ShopTab({ onToast }: ShopTabProps) {
   const [mode, setMode] = React.useState<ShopMode>('buy');
   const [profile, setProfile] = React.useState<ProfileSummary | null>(null);
+  const [prices, setPrices] = React.useState<PricesResponse | null>(null);
   const [inventory, setInventory] = React.useState<InventoryResponse>({ seeds: [], vegRaw: [], vegWashed: [] });
+  const [error, setError] = React.useState<string | null>(null);
 
   const loadData = React.useCallback(async () => {
+    try {
+      setError(null);
       const [profileResponse, inventoryResponse] = await Promise.all([
-      api.get<ProfileSummary>('/profile'),
-      api.get<PricesResponse>('/shop/prices'),
-      api.get<InventoryResponse>('/inventory')
-    ]);
+        api.get<ProfileSummary>('/profile'),
+        api.get<InventoryResponse>('/inventory')
+      ]);
 
-    setProfile(profileResponse.data);
-    setInventory(inventoryResponse.data);
+      const nextProfile = profileResponse.data;
+      let nextPrices: PricesResponse | null = nextProfile.prices ?? null;
+
+      if (!nextPrices) {
+        const { data: fallbackPrices } = await api.get<PricesResponse>('/shop/prices');
+        nextPrices = fallbackPrices;
+      }
+
+      setProfile(nextProfile);
+      setPrices(nextPrices);
+      setInventory(inventoryResponse.data);
+      return true;
+    } catch (loadError) {
+      console.error('Failed to load shop data', loadError);
+      setError('Не удалось загрузить магазин');
+      return false;
+    }
   }, []);
-
-    const refreshAfterSale = React.useCallback(async () => {
-    const [profileResponse, inventoryResponse] = await Promise.all([
-      api.get<ProfileSummary>('/profile'),
-      api.get<InventoryResponse>('/inventory')
-    ]);
-
-    setProfile(profileResponse.data);
-    setInventory(inventoryResponse.data);
-  }, []);
-
 
   React.useEffect(() => {
     loadData();
   }, [loadData]);
 
   const handleBuy = async (type: SeedType) => {
-    await api.post('/shop/buy', { type });
-    onToast('Куплено');
-    await loadData();
+    try {
+      await api.post('/shop/buy', { type });
+      onToast('Куплено');
+      const refreshed = await loadData();
+      if (!refreshed) {
+        onToast('Не удалось обновить данные магазина');
+      }
+    } catch (buyError) {
+      console.error('Failed to buy seed', buyError);
+      onToast('Не удалось купить');
+    }
   };
 
   const handleSell = async (inventoryId: number) => {
-    await api.post('/shop/sell', { inventoryId });
-    onToast('Продано');
-    await refreshAfterSale();
+    try {
+      await api.post('/shop/sell', { inventoryId });
+      onToast('Продано');
+      const refreshed = await loadData();
+      if (!refreshed) {
+        onToast('Не удалось обновить данные магазина');
+      }
+    } catch (sellError) {
+      console.error('Failed to sell harvest', sellError);
+      onToast('Не удалось продать урожай');
+    }
   };
 
-  if (!profile) {
-    return <div className="card">Загрузка...</div>;
+  if (!profile || !prices) {
+    return <div className="card">{error ?? 'Загрузка...'}</div>;
   }
-    const prices = profile.prices;
 
   return (
     <div className="grid">
