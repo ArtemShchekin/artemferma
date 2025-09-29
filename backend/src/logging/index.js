@@ -145,15 +145,11 @@ function baseDocument(level, message, extra = {}) {
 }
 
 export function logInfo(message, extra) {
-  const body = baseDocument('info', message, extra);
   printToConsole('info', message, extra);
-  return sendToOpenSearch(body);
 }
 
 export function logError(message, extra) {
-  const body = baseDocument('error', message, extra);
   printToConsole('error', message, extra);
-  return sendToOpenSearch(body);
 }
 
 export function logRequest(extra) {
