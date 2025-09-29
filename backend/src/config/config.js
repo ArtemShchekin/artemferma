@@ -65,8 +65,8 @@ const config = {
     password: getString(process.env.OPENSEARCH_PASSWORD),
     rejectUnauthorized: toBool(process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED, true),
     indexRetryAttempts: toInt(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
-    indexRetryDelayMs: toInt(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000)
-  }
+    indexRetryDelayMs: toInt(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000),
+    immediateRefresh: toBool(process.env.OPENSEARCH_IMMEDIATE_REFRESH, true)  }
 };
 
 if (!config.opensearch.enabled) {

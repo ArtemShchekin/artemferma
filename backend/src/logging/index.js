@@ -120,7 +120,7 @@ async function ensureIndex() {
 }
 
 async function sendToOpenSearch(body) {
-    if (!isOpenSearchEnabled) {
+  if (!isOpenSearchEnabled) {
     return;
   }
 
@@ -133,8 +133,9 @@ async function sendToOpenSearch(body) {
     await ensureIndex();
     if (!indexPrepared) {
       return;
-    }    
-    await osClient.index({ index: config.opensearch.index, body, refresh: 'wait_for' });
+    }
+    const refresh = config.opensearch.immediateRefresh ? true : 'wait_for';
+    await osClient.index({ index: config.opensearch.index, body, refresh });
   } catch (error) {
     printToConsole('error', 'Failed to send log to OpenSearch', { error: error.message });
   }
@@ -149,12 +150,18 @@ function baseDocument(level, message, extra = {}) {
   };
 }
 
+function logAndSend(level, message, extra) {
+  printToConsole(level, message, extra);
+  const body = baseDocument(level, message, extra ?? {});
+  return sendToOpenSearch(body);
+}
+
 export function logInfo(message, extra) {
-  printToConsole('info', message, extra);
+  return logAndSend('info', message, extra);
 }
 
 export function logError(message, extra) {
-  printToConsole('error', message, extra);
+  return logAndSend('error', message, extra);
 }
 
 export function logHttpEvent(eventName, extra) {
@@ -168,7 +175,7 @@ export function logHttpEvent(eventName, extra) {
 
 export function logApi(message, extra = {}) {
   const payload = { event: 'api', ...extra };
-   if (payload.response && typeof payload.response !== 'string') {
+  if (payload.response && typeof payload.response !== 'string') {
     try {
       payload.response = JSON.stringify(payload.response);
     } catch (error) {

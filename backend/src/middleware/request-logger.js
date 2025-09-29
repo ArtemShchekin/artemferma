@@ -130,13 +130,14 @@ export function requestLogger(req, res, next) {
       }
       const userId = req.user?.id || null;
 
+      let requestPayload = null;
       if (baseRequestPayload) {
-        const requestPayload = {
+        requestPayload = {
           ...baseRequestPayload,
           userId,
           ip
         };
-        const requestLogResult = logHttpEvent('ClientsGatewayRequest', requestPayload);
+        const requestLogResult = logHttpEvent('ClientsGatewayRequest', { ...requestPayload });
         if (requestLogResult && typeof requestLogResult.catch === 'function') {
           requestLogResult.catch((error) => {
             console.error('Failed to log request start:', error);
@@ -144,16 +145,19 @@ export function requestLogger(req, res, next) {
         }
       }
 
-      const payload = {
-        method: req.method,
-        path: originalUrl,
+      const combinedPayload = {
+        ...(requestPayload || {
+          method: req.method,
+          path: originalUrl,
+          userId,
+          ip
+        }),
         status: res.statusCode,
         durationMs,
-        userId,
-        ip,
         responseBody: capturedResponse ?? null
       };
-      const result = logHttpEvent('ClientsGatewayResponse', payload);
+
+      const result = logHttpEvent('ClientsGatewayResponse', combinedPayload);
       if (result && typeof result.catch === 'function') {
         result.catch((error) => {
           console.error('Failed to log request:', error);
