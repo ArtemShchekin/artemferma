@@ -73,8 +73,11 @@ function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     }
 
     try {
-      const { data } = await api.post('/auth/login', { email, password });
-      onSuccess(data.token);
+      const { data } = await api.post<{ accessToken?: string }>('/auth/login', { email, password });
+      if (!data?.accessToken) {
+        throw new Error('Missing access token');
+      }
+      onSuccess(data.accessToken);
     } catch (error) {
       setPasswordError('Ошибка валидации');
     }
