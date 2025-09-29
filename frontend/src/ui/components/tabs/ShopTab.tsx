@@ -12,13 +12,12 @@ import {
   SeedType
 } from '../../constants/seeds';
 
-interface PricesResponse {
-  purchase: { basePrice: number; advPrice: number };
-  sale: { basePrice: number; advPrice: number };
-}
-
 interface ProfileSummary {
   level: number;
+  prices: {
+    purchase: { basePrice: number; advPrice: number };
+    sale: { basePrice: number; advPrice: number };
+  };
 }
 
 interface InventoryItem {
@@ -40,21 +39,30 @@ interface ShopTabProps {
 
 export function ShopTab({ onToast }: ShopTabProps) {
   const [mode, setMode] = React.useState<ShopMode>('buy');
-  const [prices, setPrices] = React.useState<PricesResponse | null>(null);
   const [profile, setProfile] = React.useState<ProfileSummary | null>(null);
   const [inventory, setInventory] = React.useState<InventoryResponse>({ seeds: [], vegRaw: [], vegWashed: [] });
 
   const loadData = React.useCallback(async () => {
-    const [profileResponse, pricesResponse, inventoryResponse] = await Promise.all([
+      const [profileResponse, inventoryResponse] = await Promise.all([
       api.get<ProfileSummary>('/profile'),
       api.get<PricesResponse>('/shop/prices'),
       api.get<InventoryResponse>('/inventory')
     ]);
 
     setProfile(profileResponse.data);
-    setPrices(pricesResponse.data);
     setInventory(inventoryResponse.data);
   }, []);
+
+    const refreshAfterSale = React.useCallback(async () => {
+    const [profileResponse, inventoryResponse] = await Promise.all([
+      api.get<ProfileSummary>('/profile'),
+      api.get<InventoryResponse>('/inventory')
+    ]);
+
+    setProfile(profileResponse.data);
+    setInventory(inventoryResponse.data);
+  }, []);
+
 
   React.useEffect(() => {
     loadData();
@@ -63,18 +71,19 @@ export function ShopTab({ onToast }: ShopTabProps) {
   const handleBuy = async (type: SeedType) => {
     await api.post('/shop/buy', { type });
     onToast('Куплено');
-    loadData();
+    await loadData();
   };
 
   const handleSell = async (inventoryId: number) => {
     await api.post('/shop/sell', { inventoryId });
     onToast('Продано');
-    loadData();
+    await refreshAfterSale();
   };
 
-  if (!prices || !profile) {
+  if (!profile) {
     return <div className="card">Загрузка...</div>;
   }
+    const prices = profile.prices;
 
   return (
     <div className="grid">

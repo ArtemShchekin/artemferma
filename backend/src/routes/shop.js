@@ -9,24 +9,6 @@ import { logApi } from '../logging/index.js';
 
 const router = Router();
 
-router.get(
-  '/prices',
-  asyncHandler(async (_req, res) => {
-    const payload = {
-      purchase: { basePrice: config.prices.purchaseBase, advPrice: config.prices.purchaseAdv },
-      sale: { basePrice: config.prices.saleBase, advPrice: config.prices.saleAdv }
-          };
-
-    logApi('Shop prices requested', {
-      event: 'shop.prices',
-      method: 'GET',
-      path: '/api/shop/prices'
-    });
-
-    res.json(payload);
-  })
-  );
-
 router.post(
   '/buy',
   asyncHandler(async (req, res) => {

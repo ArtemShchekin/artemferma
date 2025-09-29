@@ -14,6 +14,10 @@ interface ProfileResponse {
   level: number;
   soldCount: number;
   balance: number;
+  prices: {
+    purchase: { basePrice: number; advPrice: number };
+    sale: { basePrice: number; advPrice: number };
+  };
 }
 
 type ProfileForm = Record<string, string>;

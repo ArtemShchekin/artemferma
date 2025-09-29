@@ -47,6 +47,10 @@ components:
         level: { type: integer, minimum: 1, maximum: 2 }
         soldCount: { type: integer }
         balance: { type: integer }
+        prices:
+          allOf:
+            - $ref: '#/components/schemas/ShopPrices'
+          readOnly: true
     ShopPrices:
       type: object
       properties:

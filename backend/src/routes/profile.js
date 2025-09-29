@@ -4,6 +4,8 @@ import { getPool } from '../db/pool.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { ensureProfileInitialized } from '../services/user-setup.js';
 import { logApi } from '../logging/index.js';
+import config from '../config/index.js';
+
 
 const router = Router();
 
@@ -24,8 +26,17 @@ router.get(
       passport: profile.passport,
       level,
       soldCount: profile.sold_count,
-      balance: profile.balance
-       };
+      balance: profile.balance,
+      prices: {
+        purchase: {
+          basePrice: config.prices.purchaseBase,
+          advPrice: config.prices.purchaseAdv
+        },
+        sale: {
+          basePrice: config.prices.saleBase,
+          advPrice: config.prices.saleAdv
+        }
+      }       };
 
     logApi('Profile requested', {
       event: 'profile.get',
