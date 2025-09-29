@@ -96,34 +96,29 @@ export function requestLogger(req, res, next) {
 
   const shouldSkip = normalizedPath === '/api/health';
 
-  if (!shouldSkip) {
-    const requestPayload = {
-      method: req.method,
-      path: originalUrl,
-      userId: req.user?.id || null,
-      ip
-    };
+  const baseRequestPayload = shouldSkip
+    ? null
+    : {
+        method: req.method,
+        path: originalUrl,
+        userId: req.user?.id || null,
+        ip
+      };
 
+  if (baseRequestPayload) {
     const requestBody = serializeForLog(req.body, { allowEmptyObject: true });
     if (requestBody !== null) {
-      requestPayload.requestBody = requestBody;
+      baseRequestPayload.requestBody = requestBody;
     }
 
     const requestQuery = serializeForLog(req.query);
     if (requestQuery !== null) {
-      requestPayload.requestQuery = requestQuery;
+      baseRequestPayload.requestQuery = requestQuery;
     }
 
     const requestParams = serializeForLog(req.params);
     if (requestParams !== null) {
-      requestPayload.requestParams = requestParams;
-    }
-
-    const requestLogResult = logHttpEvent('ClientsGatewayRequest', requestPayload);
-    if (requestLogResult && typeof requestLogResult.catch === 'function') {
-      requestLogResult.catch((error) => {
-        console.error('Failed to log request start:', error);
-      });
+      baseRequestPayload.requestParams = requestParams;
     }
   }
 
@@ -133,12 +128,28 @@ export function requestLogger(req, res, next) {
       if (shouldSkip) {
         return;
       }
+      const userId = req.user?.id || null;
+
+      if (baseRequestPayload) {
+        const requestPayload = {
+          ...baseRequestPayload,
+          userId,
+          ip
+        };
+        const requestLogResult = logHttpEvent('ClientsGatewayRequest', requestPayload);
+        if (requestLogResult && typeof requestLogResult.catch === 'function') {
+          requestLogResult.catch((error) => {
+            console.error('Failed to log request start:', error);
+          });
+        }
+      }
+
       const payload = {
         method: req.method,
         path: originalUrl,
         status: res.statusCode,
         durationMs,
-        userId: req.user?.id || null,
+        userId,
         ip,
         responseBody: capturedResponse ?? null
       };
