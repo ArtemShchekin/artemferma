@@ -34,7 +34,7 @@ export function InventoryTab({ onToast }: InventoryTabProps) {
   }, [loadInventory]);
 
   const wash = async (inventoryId: number) => {
-    await api.post('/inventory/wash', { inventoryId });
+    await api.patch(`/inventory/wash/${inventoryId}`);
     onToast('Вымыто');
     loadInventory();
   };

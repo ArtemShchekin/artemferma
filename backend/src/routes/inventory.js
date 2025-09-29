@@ -32,15 +32,15 @@ router.get(
   })
 );
 
-router.post(
-  '/wash',
+router.patch(
+  '/wash/:id',
   asyncHandler(async (req, res) => {
-    const { inventoryId } = req.body || {};
-    if (inventoryId === undefined || inventoryId === null || inventoryId === '') {
+    const { id: paramId } = req.params;
+    if (paramId === undefined || paramId === null || paramId === '') {
       throw new RequiredFieldError();
     }
 
-    const id = Number(inventoryId);
+    const id = Number(paramId);
     if (!Number.isInteger(id) || id <= 0) {
       throw new ValidationError();
     }
@@ -62,8 +62,8 @@ router.post(
 
     logApi('Inventory item washed', {
       event: 'inventory.wash',
-      method: 'POST',
-      path: '/api/inventory/wash',
+      method: 'PATCH',
+      path: `/api/inventory/wash/${id}`,
       userId: req.user.id,
       inventoryId: id
     });
