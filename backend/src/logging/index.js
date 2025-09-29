@@ -71,7 +71,8 @@ async function createIndexWithRetry(osClient) {
                 durationMs: { type: 'integer' },
                 userId: { type: 'integer' },
                 ip: { type: 'ip' },
-                stack: { type: 'text' }
+                stack: { type: 'text' },
+                responseBody: { type: 'text' }              
               }
             }
           }
@@ -159,6 +160,13 @@ export function logRequest(extra) {
 
 export function logApi(message, extra = {}) {
   const payload = { event: 'api', ...extra };
+   if (payload.response && typeof payload.response !== 'string') {
+    try {
+      payload.response = JSON.stringify(payload.response);
+    } catch (error) {
+      payload.response = '[unserializable response]';
+    }
+  }
   printToConsole('info', message, payload);
   const body = baseDocument('info', message, payload);
   return sendToOpenSearch(body);

@@ -23,18 +23,19 @@ router.get(
       harvested: Boolean(plot.harvested)
     }));
 
+    const response = {
+      plots: mapped,
+      growthMinutes: config.garden.growthMinutes
+    };
+    res.json(response);
     logApi('Garden plots requested', {
       event: 'garden.plots',
       method: 'GET',
       path: '/api/garden/plots',
       userId: req.user.id,
       slots: mapped.length,
-      growthMinutes: config.garden.growthMinutes    
-    });
-      res.json({
-       plots: mapped,
-
-      growthMinutes: config.garden.growthMinutes
+      growthMinutes: config.garden.growthMinutes,
+      response
     });
   })
 );
@@ -55,6 +56,7 @@ router.post(
     if (!Number.isInteger(inventoryNumber) || inventoryNumber <= 0) {
       throw new ValidationError();
     }
+
     let plantedType = null;
 
     await withTransaction(async (connection) => {
@@ -75,7 +77,7 @@ router.post(
       }
 
       await connection.query('DELETE FROM inventory WHERE id = ?', [inventoryNumber]);
-       await connection.query(
+      await connection.query(
         'UPDATE plots SET type = ?, planted_at = NOW(), harvested = 0 WHERE user_id = ? AND slot = ?',
         [seed.type, req.user.id, slotNumber]
       );
@@ -83,6 +85,8 @@ router.post(
       plantedType = seed.type;
     });
 
+    const response = { ok: true };
+    res.json(response);
     logApi('Garden seed planted', {
       event: 'garden.plant',
       method: 'POST',
@@ -90,9 +94,9 @@ router.post(
       userId: req.user.id,
       slot: slotNumber,
       seedType: plantedType,
-      inventoryId: inventoryNumber
+      inventoryId: inventoryNumber,
+      response
     });
-    res.json({ ok: true });
   })
 );
 
@@ -135,15 +139,17 @@ router.post(
       harvestedType = plot.type;
     });
 
+    const response = { ok: true };
+    res.json(response);
     logApi('Garden harvest completed', {
       event: 'garden.harvest',
       method: 'POST',
       path: '/api/garden/harvest',
       userId: req.user.id,
       slot: slotNumber,
-      cropType: harvestedType
+      cropType: harvestedType,
+      response
     });
-    res.json({ ok: true });
   })
 );
 

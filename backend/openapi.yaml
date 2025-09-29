@@ -137,16 +137,6 @@ paths:
       responses:
         '200':
           description: OK
-  /shop/prices:
-    get:
-      security: [{ bearerAuth: [] }]
-      summary: Получить цены
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ShopPrices' }
   /shop/buy:
     post:
       security: [{ bearerAuth: [] }]
@@ -165,6 +155,16 @@ paths:
       responses:
         '200':
           description: OK
+      /shop/prices:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Получить цены магазина
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShopPrices' }
   /shop/sell:
     post:
       security: [{ bearerAuth: [] }]

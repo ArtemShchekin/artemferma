@@ -19,6 +19,9 @@ router.get(
     const seeds = rows.filter((row) => row.kind === 'seed');
     const vegRaw = rows.filter((row) => row.kind === 'veg_raw');
     const vegWashed = rows.filter((row) => row.kind === 'veg_washed');
+
+    const response = { seeds, vegRaw, vegWashed };
+    res.json(response);
     logApi('Inventory requested', {
       event: 'inventory.list',
       method: 'GET',
@@ -26,9 +29,9 @@ router.get(
       userId: req.user.id,
       seeds: seeds.length,
       vegRaw: vegRaw.length,
-      vegWashed: vegWashed.length
+      vegWashed: vegWashed.length,
+      response    
     });
-    res.json({ seeds, vegRaw, vegWashed });
   })
 );
 
@@ -60,15 +63,16 @@ router.patch(
       );
     });
 
+    const response = { ok: true };
+    res.json(response);
     logApi('Inventory item washed', {
       event: 'inventory.wash',
       method: 'PATCH',
       path: `/api/inventory/wash/${id}`,
       userId: req.user.id,
-      inventoryId: id
+      inventoryId: id,
+      response
     });
-
-    res.json({ ok: true });
   })
 );
 

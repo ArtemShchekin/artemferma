@@ -44,9 +44,9 @@ router.get(
       path: '/api/profile',
       userId: req.user.id,
       isCoolFarmer: response.isCoolFarmer,
-      level
+      level,
+      response
     });
-      res.json(response);
   })
 );
 
@@ -107,16 +107,17 @@ router.put(
         [firstName, lastName, middleName, req.user.id]
       );
     }
+    const response = { ok: true, message: 'Данные сохранены' };
+    res.json(response);
     logApi('Profile updated', {
       event: 'profile.update',
       method: 'PUT',
       path: '/api/profile',
       userId: req.user.id,
       isCoolFarmer,
-      mode: isCoolFarmer ? 'cool' : 'regular'
+      mode: isCoolFarmer ? 'cool' : 'regular',
+      response
     });
-
-    res.json({ ok: true, message: 'Данные сохранены' });
   })
 );
 

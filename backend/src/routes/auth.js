@@ -46,15 +46,17 @@ router.post(
       const token = signToken({ id: userId, email });
       return { userId, token };
     });
+      const response = { token, message: 'Регистрация произошла успешно' };
+    res.json(response);
 
     logApi('User registered', {
       event: 'auth.register',
       method: 'POST',
       path: '/api/auth/register',
       userId,
-      email
+      email,
+      response
        });
-      res.json({ token, message: 'Регистрация произошла успешно' });
   })
 );
 
@@ -80,12 +82,15 @@ router.post(
     }
 
     const token = signToken(user);
+    const response = { token };
+    res.json(response);
     logApi('User logged in', {
       event: 'auth.login',
       method: 'POST',
       path: '/api/auth/login',
-      userId: user.id
-    });    res.json({ token });
+      userId: user.id,
+      response
+    });    
   })
 );
 

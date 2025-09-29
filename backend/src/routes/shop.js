@@ -9,6 +9,31 @@ import { logApi } from '../logging/index.js';
 
 const router = Router();
 
+router.get(
+  '/prices',
+  asyncHandler(async (req, res) => {
+    const response = {
+      purchase: {
+        basePrice: config.prices.purchaseBase,
+        advPrice: config.prices.purchaseAdv
+      },
+      sale: {
+        basePrice: config.prices.saleBase,
+        advPrice: config.prices.saleAdv
+      }
+    };
+
+    res.json(response);
+    logApi('Shop prices requested', {
+      event: 'shop.prices',
+      method: 'GET',
+      path: '/api/shop/prices',
+      userId: req.user.id,
+      response
+    });
+  })
+);
+
 router.post(
   '/buy',
   asyncHandler(async (req, res) => {
@@ -19,7 +44,8 @@ router.post(
     if (!SEED_TYPES.includes(type)) {
       throw new ValidationError();
     }
-        let price = 0;
+
+    let price = 0;
 
     await withTransaction(async (connection) => {
       const profile = await ensureProfileWithConnection(connection, req.user.id);
@@ -40,16 +66,18 @@ router.post(
         [req.user.id, 'seed', type, 'new']
       );
     });
-        logApi('Seed purchased', {
+
+    const response = { ok: true };
+    res.json(response);
+    logApi('Seed purchased', {
       event: 'shop.buy',
       method: 'POST',
       path: '/api/shop/buy',
       userId: req.user.id,
       type,
-      price
+      price,
+      response
     });
-
-    res.json({ ok: true });
   })
 );
 
@@ -65,6 +93,7 @@ router.post(
     if (!Number.isInteger(id) || id <= 0) {
       throw new ValidationError();
     }
+
     let price = 0;
     let soldType = null;
 
@@ -79,23 +108,26 @@ router.post(
       await ensureProfileWithConnection(connection, req.user.id);
       soldType = item.type;
       price = isAdvancedSeed(item.type) ? config.prices.saleAdv : config.prices.saleBase;
+
       await connection.query('DELETE FROM inventory WHERE id = ?', [id]);
       await connection.query(
         'UPDATE profiles SET balance = balance + ?, sold_count = sold_count + 1 WHERE user_id = ?',
         [price, req.user.id]
       );
     });
-        logApi('Harvest sold', {
+
+    const response = { ok: true };
+    res.json(response);
+    logApi('Harvest sold', {
       event: 'shop.sell',
       method: 'POST',
       path: '/api/shop/sell',
       userId: req.user.id,
       inventoryId: id,
       type: soldType,
-      price
+      price,
+      response
     });
-
-    res.json({ ok: true });
   })
 );
 
