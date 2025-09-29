@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/async-handler.js';
 import { getPool } from '../db/pool.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { ensureProfileInitialized } from '../services/user-setup.js';
-
+import { logApi } from '../logging/index.js';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get(
 
     const level = profile.sold_count >= 50 ? 2 : 1;
 
-    res.json({
+    const response = {
       isCoolFarmer: Boolean(profile.is_cool),
       firstName: profile.first_name,
       lastName: profile.last_name,
@@ -25,7 +25,17 @@ router.get(
       level,
       soldCount: profile.sold_count,
       balance: profile.balance
+       };
+
+    logApi('Profile requested', {
+      event: 'profile.get',
+      method: 'GET',
+      path: '/api/profile',
+      userId: req.user.id,
+      isCoolFarmer: response.isCoolFarmer,
+      level
     });
+      res.json(response);
   })
 );
 
@@ -86,6 +96,14 @@ router.put(
         [firstName, lastName, middleName, req.user.id]
       );
     }
+    logApi('Profile updated', {
+      event: 'profile.update',
+      method: 'PUT',
+      path: '/api/profile',
+      userId: req.user.id,
+      isCoolFarmer,
+      mode: isCoolFarmer ? 'cool' : 'regular'
+    });
 
     res.json({ ok: true, message: 'Данные сохранены' });
   })

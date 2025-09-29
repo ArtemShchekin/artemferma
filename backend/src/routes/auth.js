@@ -6,7 +6,7 @@ import { assertValid } from '../utils/validation.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { queryOne, withTransaction } from '../db/pool.js';
 import { signToken } from '../utils/jwt.js';
-import { logInfo } from '../logging/index.js';
+import { logApi } from '../logging/index.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 
 const router = Router();
@@ -47,8 +47,14 @@ router.post(
       return { userId, token };
     });
 
-    logInfo('User registered', { event: 'auth.register', userId, email });
-    res.json({ token, message: 'Регистрация произошла успешно' });
+    logApi('User registered', {
+      event: 'auth.register',
+      method: 'POST',
+      path: '/api/auth/register',
+      userId,
+      email
+       });
+      res.json({ token, message: 'Регистрация произошла успешно' });
   })
 );
 
@@ -74,8 +80,12 @@ router.post(
     }
 
     const token = signToken(user);
-    logInfo('User logged in', { event: 'auth.login', userId: user.id });
-    res.json({ token });
+    logApi('User logged in', {
+      event: 'auth.login',
+      method: 'POST',
+      path: '/api/auth/login',
+      userId: user.id
+    });    res.json({ token });
   })
 );
 

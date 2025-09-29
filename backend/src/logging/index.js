@@ -157,6 +157,13 @@ export function logRequest(extra) {
   return sendToOpenSearch(body);
 }
 
+export function logApi(message, extra = {}) {
+  const payload = { event: 'api', ...extra };
+  printToConsole('info', message, payload);
+  const body = baseDocument('info', message, payload);
+  return sendToOpenSearch(body);
+}
+
 export function logStartup(extra = {}) {
   return logInfo('Backend started', { event: 'startup', ...extra });
 }

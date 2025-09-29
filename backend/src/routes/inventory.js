@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { logApi } from '../logging/index.js';
+
 
 const router = Router();
 
@@ -17,7 +19,15 @@ router.get(
     const seeds = rows.filter((row) => row.kind === 'seed');
     const vegRaw = rows.filter((row) => row.kind === 'veg_raw');
     const vegWashed = rows.filter((row) => row.kind === 'veg_washed');
-
+    logApi('Inventory requested', {
+      event: 'inventory.list',
+      method: 'GET',
+      path: '/api/inventory',
+      userId: req.user.id,
+      seeds: seeds.length,
+      vegRaw: vegRaw.length,
+      vegWashed: vegWashed.length
+    });
     res.json({ seeds, vegRaw, vegWashed });
   })
 );
@@ -48,6 +58,14 @@ router.post(
         'UPDATE inventory SET kind = "veg_washed", status = "washed" WHERE id = ?',
         [id]
       );
+    });
+
+    logApi('Inventory item washed', {
+      event: 'inventory.wash',
+      method: 'POST',
+      path: '/api/inventory/wash',
+      userId: req.user.id,
+      inventoryId: id
     });
 
     res.json({ ok: true });

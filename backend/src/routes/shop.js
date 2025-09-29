@@ -5,18 +5,27 @@ import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
+import { logApi } from '../logging/index.js';
 
 const router = Router();
 
 router.get(
   '/prices',
   asyncHandler(async (_req, res) => {
-    res.json({
+    const payload = {
       purchase: { basePrice: config.prices.purchaseBase, advPrice: config.prices.purchaseAdv },
       sale: { basePrice: config.prices.saleBase, advPrice: config.prices.saleAdv }
+          };
+
+    logApi('Shop prices requested', {
+      event: 'shop.prices',
+      method: 'GET',
+      path: '/api/shop/prices'
     });
+
+    res.json(payload);
   })
-);
+  );
 
 router.post(
   '/buy',
@@ -28,6 +37,7 @@ router.post(
     if (!SEED_TYPES.includes(type)) {
       throw new ValidationError();
     }
+        let price = 0;
 
     await withTransaction(async (connection) => {
       const profile = await ensureProfileWithConnection(connection, req.user.id);
@@ -37,7 +47,7 @@ router.post(
         throw new ValidationError();
       }
 
-      const price = isAdvancedSeed(type) ? config.prices.purchaseAdv : config.prices.purchaseBase;
+      price = isAdvancedSeed(type) ? config.prices.purchaseAdv : config.prices.purchaseBase;
       if (profile.balance < price) {
         throw new ValidationError();
       }
@@ -47,6 +57,14 @@ router.post(
         'INSERT INTO inventory (user_id, kind, type, status) VALUES (?, ?, ?, ?)',
         [req.user.id, 'seed', type, 'new']
       );
+    });
+        logApi('Seed purchased', {
+      event: 'shop.buy',
+      method: 'POST',
+      path: '/api/shop/buy',
+      userId: req.user.id,
+      type,
+      price
     });
 
     res.json({ ok: true });
@@ -65,6 +83,8 @@ router.post(
     if (!Number.isInteger(id) || id <= 0) {
       throw new ValidationError();
     }
+    let price = 0;
+    let soldType = null;
 
     await withTransaction(async (connection) => {
       const [[item]] = await connection.query(
@@ -75,13 +95,22 @@ router.post(
         throw new ValidationError();
       }
       await ensureProfileWithConnection(connection, req.user.id);
-      const price = isAdvancedSeed(item.type) ? config.prices.saleAdv : config.prices.saleBase;
-
+      soldType = item.type;
+      price = isAdvancedSeed(item.type) ? config.prices.saleAdv : config.prices.saleBase;
       await connection.query('DELETE FROM inventory WHERE id = ?', [id]);
       await connection.query(
         'UPDATE profiles SET balance = balance + ?, sold_count = sold_count + 1 WHERE user_id = ?',
         [price, req.user.id]
       );
+    });
+        logApi('Harvest sold', {
+      event: 'shop.sell',
+      method: 'POST',
+      path: '/api/shop/sell',
+      userId: req.user.id,
+      inventoryId: id,
+      type: soldType,
+      price
     });
 
     res.json({ ok: true });

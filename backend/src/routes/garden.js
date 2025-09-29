@@ -5,6 +5,7 @@ import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
+import { logApi } from '../logging/index.js';
 
 
 const router = Router();
@@ -22,6 +23,13 @@ router.get(
       harvested: Boolean(plot.harvested)
     }));
 
+    logApi('Garden plots requested', {
+      event: 'garden.plots',
+      method: 'GET',
+      path: '/api/garden/plots',
+      userId: req.user.id,
+      slots: mapped.length
+    });
     res.json(mapped);
   })
 );
@@ -29,6 +37,12 @@ router.get(
 router.get(
   '/config',
   asyncHandler(async (_req, res) => {
+        logApi('Garden config requested', {
+      event: 'garden.config',
+      method: 'GET',
+      path: '/api/garden/config',
+      growthMinutes: config.garden.growthMinutes
+    });
     res.json({ growthMinutes: config.garden.growthMinutes });
   })
 );
@@ -49,6 +63,7 @@ router.post(
     if (!Number.isInteger(inventoryNumber) || inventoryNumber <= 0) {
       throw new ValidationError();
     }
+    let plantedType = null;
 
     await withTransaction(async (connection) => {
       const [[plot]] = await connection.query(
@@ -68,12 +83,23 @@ router.post(
       }
 
       await connection.query('DELETE FROM inventory WHERE id = ?', [inventoryNumber]);
-      await connection.query(
+       await connection.query(
         'UPDATE plots SET type = ?, planted_at = NOW(), harvested = 0 WHERE user_id = ? AND slot = ?',
         [seed.type, req.user.id, slotNumber]
       );
+
+      plantedType = seed.type;
     });
 
+    logApi('Garden seed planted', {
+      event: 'garden.plant',
+      method: 'POST',
+      path: '/api/garden/plant',
+      userId: req.user.id,
+      slot: slotNumber,
+      seedType: plantedType,
+      inventoryId: inventoryNumber
+    });
     res.json({ ok: true });
   })
 );
@@ -90,6 +116,8 @@ router.post(
     if (!Number.isInteger(slotNumber) || slotNumber <= 0) {
       throw new ValidationError();
     }
+
+    let harvestedType = null;
 
     await withTransaction(async (connection) => {
       const [[plot]] = await connection.query(
@@ -111,8 +139,18 @@ router.post(
         'INSERT INTO inventory (user_id, kind, type, status) VALUES (?, ?, ?, ?)',
         [req.user.id, 'veg_raw', plot.type, 'harvested']
       );
+
+      harvestedType = plot.type;
     });
 
+    logApi('Garden harvest completed', {
+      event: 'garden.harvest',
+      method: 'POST',
+      path: '/api/garden/harvest',
+      userId: req.user.id,
+      slot: slotNumber,
+      cropType: harvestedType
+    });
     res.json({ ok: true });
   })
 );
