@@ -5,6 +5,7 @@ import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { ensureProfileInitialized } from '../services/user-setup.js';
 import { logApi } from '../logging/index.js';
 import config from '../config/index.js';
+import { redactProfilePayload } from '../utils/redact.js';
 
 const DEFAULT_PROFILE = {
   is_cool: 0,
@@ -148,6 +149,8 @@ router.put(
 
     const [[updatedProfile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
     const response = mapProfileRow(updatedProfile);    res.json(response);
+    const redactedRequest = redactProfilePayload(requestPayload);
+    const redactedResponse = redactProfilePayload(response);
     logApi('Profile updated', {
       event: 'profile.update',
       method: 'PUT',
@@ -155,8 +158,8 @@ router.put(
       userId: req.user.id,
       isCoolFarmer,
       mode: isCoolFarmer ? 'cool' : 'regular',
-      request: requestPayload,
-      response
+      request: redactedRequest,
+      response: redactedResponse
     });
   })
 );

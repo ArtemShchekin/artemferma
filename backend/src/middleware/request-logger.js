@@ -1,4 +1,5 @@
 import { logHttpEvent } from '../logging/index.js';
+import { redactProfilePayload, shouldRedactProfileLogs } from '../utils/redact.js';
 
 function serializeForLog(value, { allowEmptyObject = false } = {}) {
   if (value === undefined || value === null) {
@@ -78,6 +79,8 @@ export function requestLogger(req, res, next) {
 
   const originalUrl = req.originalUrl || req.url || '';
   const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
+  const shouldRedactProfile = shouldRedactProfileLogs(req.method, normalizedPath);
+
 
   const xForwardedForHeader = req.headers?.['x-forwarded-for'];
   let ip = req.ip;
@@ -109,17 +112,18 @@ export function requestLogger(req, res, next) {
   if (baseRequestPayload) {
     requestPayload = { ...baseRequestPayload };
 
-    const requestBody = serializeForLog(req.body, { allowEmptyObject: true });
+    const bodyForLogging = shouldRedactProfile ? redactProfilePayload(req.body) : req.body;
+    const requestBody = serializeForLog(bodyForLogging, { allowEmptyObject: true });
     if (requestBody !== null) {
       requestPayload.requestBody = requestBody;
     }
 
-    const requestQuery = serializeForLog(req.query);
+    const requestQuery = serializeForLog(shouldRedactProfile ? redactProfilePayload(req.query) : req.query);
     if (requestQuery !== null) {
       requestPayload.requestQuery = requestQuery;
     }
 
-    const requestParams = serializeForLog(req.params);
+    const requestParams = serializeForLog(shouldRedactProfile ? redactProfilePayload(req.params) : req.params);
     if (requestParams !== null) {
       requestPayload.requestParams = requestParams;
     }
@@ -140,6 +144,8 @@ export function requestLogger(req, res, next) {
       }
       const userId = req.user?.id || null;
 
+      const responseBody = shouldRedactProfile ? redactProfilePayload(capturedResponse) : capturedResponse;
+
       const combinedPayload = {
         ...((requestPayload && {
           ...requestPayload,
@@ -153,7 +159,7 @@ export function requestLogger(req, res, next) {
         }),
         status: res.statusCode,
         durationMs,
-        responseBody: capturedResponse ?? null
+        responseBody: responseBody ?? null
       };
 
       const result = logHttpEvent('ClientsGatewayResponse', combinedPayload);
