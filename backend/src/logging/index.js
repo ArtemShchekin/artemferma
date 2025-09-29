@@ -134,7 +134,7 @@ async function sendToOpenSearch(body) {
     if (!indexPrepared) {
       return;
     }    
-    await osClient.index({ index: config.opensearch.index, body });
+    await osClient.index({ index: config.opensearch.index, body, refresh: 'wait_for' });
   } catch (error) {
     printToConsole('error', 'Failed to send log to OpenSearch', { error: error.message });
   }
