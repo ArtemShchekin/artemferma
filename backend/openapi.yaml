@@ -75,8 +75,6 @@ components:
           properties:
             basePrice: { type: integer }
             advPrice: { type: integer }
-@@ -66,78 +82,92 @@ components:
-            advPrice: { type: integer }
     InventoryItem:
       type: object
       properties:
