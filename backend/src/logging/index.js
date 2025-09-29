@@ -165,16 +165,25 @@ export function logError(message, extra) {
 }
 
 export function logHttpEvent(eventName, extra) {
-  const body = baseDocument('info', 'http_event', {
+  const payload = {
     event: 'http_event',
     'event.eventname': eventName,
     ...extra
-  });
+  };
+  printToConsole('info', 'http_event', payload);
+  const body = baseDocument('info', 'http_event', payload);
   return sendToOpenSearch(body);
 }
 
 export function logApi(message, extra = {}) {
   const payload = { event: 'api', ...extra };
+  if (payload.request && typeof payload.request !== 'string') {
+    try {
+      payload.request = JSON.stringify(payload.request);
+    } catch (error) {
+      payload.request = '[unserializable request]';
+    }
+  }
   if (payload.response && typeof payload.response !== 'string') {
     try {
       payload.response = JSON.stringify(payload.response);
@@ -193,4 +202,4 @@ export function logStartup(extra = {}) {
 
 export function logShutdown(reason, extra = {}) {
   return logInfo('Backend shutting down', { event: 'shutdown', reason, ...extra });
-}
+  }

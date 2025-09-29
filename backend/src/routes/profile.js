@@ -90,6 +90,14 @@ router.put(
     }
     await ensureProfileInitialized(req.user.id);
     const pool = getPool();
+    const requestPayload = {
+      isCoolFarmer: Boolean(isCoolFarmer),
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+      middleName: middleName ?? null,
+      nickname: nickname ?? null,
+      passport: passport ?? null
+    };
 
     if (isCoolFarmer) {
       if (!nickname) {
@@ -137,8 +145,9 @@ router.put(
         [firstName, lastName, middleName, req.user.id]
       );
     }
-    const response = { ok: true, message: 'Данные сохранены' };
-    res.json(response);
+
+    const [[updatedProfile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
+    const response = mapProfileRow(updatedProfile);    res.json(response);
     logApi('Profile updated', {
       event: 'profile.update',
       method: 'PUT',
@@ -146,6 +155,7 @@ router.put(
       userId: req.user.id,
       isCoolFarmer,
       mode: isCoolFarmer ? 'cool' : 'regular',
+      request: requestPayload,
       response
     });
   })
