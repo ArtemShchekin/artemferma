@@ -75,9 +75,13 @@ components:
         type: { type: string, nullable: true }
         plantedAt: { type: string, format: date-time, nullable: true }
         matured: { type: boolean }
-    GardenConfig:
+        harvested: { type: boolean }
+    GardenPlotsResponse:
       type: object
       properties:
+        plots:
+          type: array
+          items: { $ref: '#/components/schemas/Plot' }
         growthMinutes: { type: integer }
 paths:
   /auth/register: 
@@ -216,19 +220,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Plot' }
-  /garden/config:
-    get:
-      security: [{ bearerAuth: [] }]
-      summary: Конфигурация грядок
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/GardenConfig' }              
+              schema: { $ref: '#/components/schemas/GardenPlotsResponse' }
+          
   /garden/plant:
     post:
       security: [{ bearerAuth: [] }]

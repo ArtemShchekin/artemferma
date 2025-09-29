@@ -5,14 +5,14 @@ import shopRouter from './shop.js';
 import inventoryRouter from './inventory.js';
 import gardenRouter from './garden.js';
 import { authenticate } from '../middleware/auth.js';
-import { logApi } from '../logging/index.js';
+import { logInfo } from '../logging/index.js';
 
 
 const router = Router();
 
 router.use('/auth', authRouter);
 router.get('/health', (_req, res) => {
-  logApi('Health check', { event: 'health', method: 'GET', path: '/api/health' });
+  logInfo('Health check', { event: 'health', method: 'GET', path: '/api/health' });
   res.json({ ok: true });
 });
 router.use(authenticate);

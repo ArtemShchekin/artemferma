@@ -22,10 +22,6 @@ interface InventoryResponse {
   seeds: InventorySeed[];
 }
 
-interface GardenConfig {
-  growthMinutes: number;
-}
-
 interface GardenTabProps {
   onToast: ToastFn;
 }
@@ -37,20 +33,16 @@ export function GardenTab({ onToast }: GardenTabProps) {
   const [, forceTick] = React.useReducer((tick) => tick + 1, 0);
 
   const loadData = React.useCallback(async () => {
-    const plotsResponse = await api.get<Plot[]>('/garden/plots');
-    setPlots(plotsResponse.data);
+    const plotsResponse = await api.get<{ plots: Plot[]; growthMinutes: number }>('/garden/plots');
+    const plotList = Array.isArray(plotsResponse.data?.plots) ? plotsResponse.data.plots : [];
+    setPlots(plotList);
 
     const inventoryResponse = await api.get<InventoryResponse>('/inventory');
     setInventory(inventoryResponse.data.seeds);
 
-    try {
-      const configResponse = await api.get<GardenConfig>('/garden/config');
-      const minutes = configResponse.data?.growthMinutes;
-      const parsed = typeof minutes === 'number' ? minutes : Number(minutes);
-      setGrowthMinutes(Number.isFinite(parsed) ? parsed : 10);
-    } catch (error) {
-      setGrowthMinutes(10);
-    }
+    const minutes = plotsResponse.data?.growthMinutes;
+    const parsed = typeof minutes === 'number' ? minutes : Number(minutes);
+    setGrowthMinutes(Number.isFinite(parsed) ? parsed : 10);
   }, []);
 
   React.useEffect(() => {

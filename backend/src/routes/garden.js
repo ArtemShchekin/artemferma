@@ -28,22 +28,14 @@ router.get(
       method: 'GET',
       path: '/api/garden/plots',
       userId: req.user.id,
-      slots: mapped.length
+      slots: mapped.length,
+      growthMinutes: config.garden.growthMinutes    
     });
-    res.json(mapped);
-  })
-);
+      res.json({
+       plots: mapped,
 
-router.get(
-  '/config',
-  asyncHandler(async (_req, res) => {
-        logApi('Garden config requested', {
-      event: 'garden.config',
-      method: 'GET',
-      path: '/api/garden/config',
       growthMinutes: config.garden.growthMinutes
     });
-    res.json({ growthMinutes: config.garden.growthMinutes });
   })
 );
 
