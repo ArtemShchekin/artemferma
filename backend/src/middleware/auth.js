@@ -1,6 +1,5 @@
-import jwt from 'jsonwebtoken';
-import config from '../config/index.js';
 import { UnauthorizedError } from '../utils/errors.js';
+import { verifyAccessToken } from '../utils/jwt.js';
 
 export function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
@@ -11,7 +10,7 @@ export function authenticate(req, res, next) {
   }
 
   try {
-    req.user = jwt.verify(token, config.jwtSecret);
+    req.user = verifyAccessToken(token);
     return next();
   } catch (error) {
     return next(new UnauthorizedError());

@@ -30,10 +30,26 @@ components:
       properties:
         email: { type: string, format: email }
         password: { type: string }
-    TokenResp:
+    AuthTokens:
       type: object
+      required: [accessToken, refreshToken]
       properties:
-        token:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    AuthRegisterResp:
+      allOf:
+        - $ref: '#/components/schemas/AuthTokens'
+        - type: object
+          properties:
+            message:
+              type: string
+    AuthRefreshReq:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
           type: string
     Profile:
       type: object
@@ -59,10 +75,7 @@ components:
           properties:
             basePrice: { type: integer }
             advPrice: { type: integer }
-        sale:
-          type: object
-          properties:
-            basePrice: { type: integer }
+@@ -66,78 +82,92 @@ components:
             advPrice: { type: integer }
     InventoryItem:
       type: object
@@ -88,7 +101,7 @@ components:
           items: { $ref: '#/components/schemas/Plot' }
         growthMinutes: { type: integer }
 paths:
-  /auth/register: 
+  /auth/register:
     post:
       summary: Регистрация
       requestBody:
@@ -101,7 +114,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TokenResp' }
+              schema: { $ref: '#/components/schemas/AuthRegisterResp' }
   /auth/login:
     post:
       summary: Логин
@@ -115,7 +128,21 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TokenResp' }
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+  /auth/refresh:
+    post:
+      summary: Обновить токены
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRefreshReq' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
   /profile:
     get:
       security: [{ bearerAuth: [] }]

@@ -1,6 +1,24 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
-export function signToken(payload) {
-  return jwt.sign({ id: payload.id, email: payload.email }, config.jwtSecret, { expiresIn: '7d' });
+const buildPayload = (payload) => ({ id: payload.id, email: payload.email });
+
+export function signAccessToken(payload) {
+  return jwt.sign(buildPayload(payload), config.jwtSecret, {
+    expiresIn: config.jwtAccessExpiresIn
+  });
+}
+
+export function signRefreshToken(payload) {
+  return jwt.sign(buildPayload(payload), config.jwtRefreshSecret, {
+    expiresIn: config.jwtRefreshExpiresIn
+  });
+}
+
+export function verifyAccessToken(token) {
+  return jwt.verify(token, config.jwtSecret);
+}
+
+export function verifyRefreshToken(token) {
+  return jwt.verify(token, config.jwtRefreshSecret);
 }

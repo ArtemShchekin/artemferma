@@ -3,9 +3,9 @@ import bcrypt from 'bcryptjs';
 import { body } from 'express-validator';
 import { asyncHandler } from '../utils/async-handler.js';
 import { assertValid } from '../utils/validation.js';
-import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { RequiredFieldError, UnauthorizedError, ValidationError } from '../utils/errors.js';
 import { queryOne, withTransaction } from '../db/pool.js';
-import { signToken } from '../utils/jwt.js';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import { logApi } from '../logging/index.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 
@@ -15,6 +15,11 @@ const emailValidator = body('email').isEmail().withMessage('Ошибка вал�
 const passwordValidator = body('password')
   .isLength({ min: 6, max: 20 }).withMessage('Ошибка валидации')
   .matches(/^(?=.*\d)[A-Za-z\d]{6,20}$/).withMessage('Ошибка валидации');
+
+const buildTokenPair = (payload) => ({
+  accessToken: signAccessToken(payload),
+  refreshToken: signRefreshToken(payload)
+});
 
 router.post(
   '/register',
@@ -27,7 +32,7 @@ router.post(
       throw new RequiredFieldError();
     }
 
-    const { userId, token } = await withTransaction(async (connection) => {
+    const { userId } = await withTransaction(async (connection) => {
       const [existing] = await connection.query('SELECT id FROM users WHERE email = ? FOR UPDATE', [email]);
       if (existing.length) {
         throw new ValidationError();
@@ -43,10 +48,13 @@ router.post(
 
       await ensureProfileWithConnection(connection, userId);
 
-      const token = signToken({ id: userId, email });
-      return { userId, token };
+      return { userId };
     });
-      const response = { token, message: 'Регистрация произошла успешно' };
+    const tokens = buildTokenPair({ id: userId, email });
+    const response = {
+      ...tokens,
+      message: 'Регистрация произошла успешно'
+    };
     res.json(response);
 
     logApi('User registered', {
@@ -56,7 +64,7 @@ router.post(
       userId,
       email,
       response
-       });
+    });
   })
 );
 
@@ -81,8 +89,8 @@ router.post(
       throw new ValidationError();
     }
 
-    const token = signToken(user);
-    const response = { token };
+    const tokens = buildTokenPair(user);
+    const response = { ...tokens };
     res.json(response);
     logApi('User logged in', {
       event: 'auth.login',
@@ -90,7 +98,40 @@ router.post(
       path: '/api/auth/login',
       userId: user.id,
       response
-    });    
+    });
+  })
+);
+
+router.post(
+  '/refresh',
+  [body('refreshToken').isString().withMessage('Ошибка валидации')],
+  asyncHandler(async (req, res) => {
+    assertValid(req);
+    const { refreshToken } = req.body || {};
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch (error) {
+      throw new UnauthorizedError();
+    }
+
+    const user = await queryOne('SELECT id, email FROM users WHERE id = ?', [payload.id]);
+    if (!user) {
+      throw new UnauthorizedError();
+    }
+
+    const tokens = buildTokenPair(user);
+    const response = { ...tokens };
+    res.json(response);
+
+    logApi('Token refreshed', {
+      event: 'auth.refresh',
+      method: 'POST',
+      path: '/api/auth/refresh',
+      userId: user.id,
+      response
+    });
   })
 );
 

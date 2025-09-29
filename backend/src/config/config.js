@@ -37,6 +37,9 @@ const config = {
   env: getString(process.env.NODE_ENV, 'development'),
   port: toInt(process.env.PORT, 3000),
   jwtSecret: getString(process.env.JWT_SECRET, 'devsecret'),
+    jwtAccessExpiresIn: getString(process.env.JWT_ACCESS_EXPIRES_IN, '15m'),
+  jwtRefreshSecret: getString(process.env.JWT_REFRESH_SECRET, 'devrefreshsecret'),
+  jwtRefreshExpiresIn: getString(process.env.JWT_REFRESH_EXPIRES_IN, '30d'),
   database: {
     host: getString(process.env.DB_HOST, 'mysql'),
     port: toInt(process.env.DB_PORT, 3306),
