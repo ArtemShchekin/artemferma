@@ -64,6 +64,7 @@ async function createIndexWithRetry(osClient) {
                 '@timestamp': { type: 'date' },
                 level: { type: 'keyword' },
                 event: { type: 'keyword' },
+                'event.eventname': { type: 'keyword' },
                 message: { type: 'text' },
                 method: { type: 'keyword' },
                 path: { type: 'keyword' },
@@ -71,6 +72,9 @@ async function createIndexWithRetry(osClient) {
                 durationMs: { type: 'integer' },
                 userId: { type: 'integer' },
                 ip: { type: 'ip' },
+                requestBody: { type: 'text' },
+                requestQuery: { type: 'text' },
+                requestParams: { type: 'text' },
                 stack: { type: 'text' },
                 responseBody: { type: 'text' }              
               }
@@ -153,8 +157,12 @@ export function logError(message, extra) {
   printToConsole('error', message, extra);
 }
 
-export function logRequest(extra) {
-  const body = baseDocument('info', 'http_request', { event: 'http_request', ...extra });
+export function logHttpEvent(eventName, extra) {
+  const body = baseDocument('info', 'http_event', {
+    event: 'http_event',
+    'event.eventname': eventName,
+    ...extra
+  });
   return sendToOpenSearch(body);
 }
 

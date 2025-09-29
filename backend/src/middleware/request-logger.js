@@ -1,8 +1,38 @@
-import { logRequest } from '../logging/index.js';
+import { logHttpEvent } from '../logging/index.js';
+
+function serializeForLog(value, { allowEmptyObject = false } = {}) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf8');
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.prototype.toString.call(value) === '[object Object]' &&
+    !allowEmptyObject &&
+    Object.keys(value).length === 0
+  ) {
+    return null;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch (_error) {
+    return '[unserializable payload]';
+  }
+}
 
 export function requestLogger(req, res, next) {
   const started = Date.now();
-    let capturedResponse;
+  let capturedResponse;
 
   const captureBody = (body) => {
     if (body === undefined || body === null) {
@@ -46,40 +76,73 @@ export function requestLogger(req, res, next) {
     return originalEnd.apply(res, args);
   };
 
+  const originalUrl = req.originalUrl || req.url || '';
+  const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
+
+  const xForwardedForHeader = req.headers?.['x-forwarded-for'];
+  let ip = req.ip;
+  if (xForwardedForHeader !== undefined && xForwardedForHeader !== null) {
+    const headerValue = Array.isArray(xForwardedForHeader)
+      ? xForwardedForHeader.find((value) => value)
+      : xForwardedForHeader;
+
+    if (headerValue !== undefined && headerValue !== null) {
+      const forwardedIp = headerValue.toString().split(',')[0]?.trim();
+      if (forwardedIp) {
+        ip = forwardedIp;
+      }
+    }
+  }
+
+  const shouldSkip = normalizedPath === '/api/health';
+
+  if (!shouldSkip) {
+    const requestPayload = {
+      method: req.method,
+      path: originalUrl,
+      userId: req.user?.id || null,
+      ip
+    };
+
+    const requestBody = serializeForLog(req.body, { allowEmptyObject: true });
+    if (requestBody !== null) {
+      requestPayload.requestBody = requestBody;
+    }
+
+    const requestQuery = serializeForLog(req.query);
+    if (requestQuery !== null) {
+      requestPayload.requestQuery = requestQuery;
+    }
+
+    const requestParams = serializeForLog(req.params);
+    if (requestParams !== null) {
+      requestPayload.requestParams = requestParams;
+    }
+
+    const requestLogResult = logHttpEvent('ClientsGatewayRequest', requestPayload);
+    if (requestLogResult && typeof requestLogResult.catch === 'function') {
+      requestLogResult.catch((error) => {
+        console.error('Failed to log request start:', error);
+      });
+    }
+  }
+
   res.on('finish', () => {
     try {
       const durationMs = Date.now() - started;
-      const xForwardedForHeader = req.headers?.['x-forwarded-for'];
-      let ip = req.ip;
-      const originalUrl = req.originalUrl || req.url || '';
-      const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
-
-      if (normalizedPath === '/api/health') {
+      if (shouldSkip) {
         return;
-      }
-
-
-      if (xForwardedForHeader !== undefined && xForwardedForHeader !== null) {
-        const headerValue = Array.isArray(xForwardedForHeader)
-          ? xForwardedForHeader.find((value) => value)
-          : xForwardedForHeader;
-
-        if (headerValue !== undefined && headerValue !== null) {
-          const forwardedIp = headerValue.toString().split(',')[0]?.trim();
-          if (forwardedIp) {
-            ip = forwardedIp;
-          }
-        }
       }
       const payload = {
         method: req.method,
-        path: req.originalUrl,
+        path: originalUrl,
         status: res.statusCode,
         durationMs,
         userId: req.user?.id || null,
         ip,
-        responseBody: capturedResponse ?? null      };
-      const result = logRequest(payload);
+        responseBody: capturedResponse ?? null
+      };
+      const result = logHttpEvent('ClientsGatewayResponse', payload);
       if (result && typeof result.catch === 'function') {
         result.catch((error) => {
           console.error('Failed to log request:', error);
