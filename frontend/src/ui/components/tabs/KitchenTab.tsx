@@ -100,6 +100,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
   const [vegetableSelection, setVegetableSelection] = React.useState<VegetableSelection>(INITIAL_VEGETABLE_SELECTION);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [fruitMessage, setFruitMessage] = React.useState<string | null>(null);
+  const [vegetableMessage, setVegetableMessage] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -136,6 +138,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
       radish: Math.min(state.vegetables.radish ?? 0, VEGETABLE_RECIPE.veg.radish),
       sunflowerOilMl: Math.min(state.sunflowerOilMl, VEGETABLE_RECIPE.liquids.sunflowerOilMl)
     });
+    setFruitMessage(null);
+    setVegetableMessage(null);
   }, [state]);
 
   const openControl = (key: string) => {
@@ -144,10 +148,12 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
 
   const updateFruitSelection = (key: keyof FruitSelection, value: number) => {
     setFruitSelection((previous) => ({ ...previous, [key]: value }));
+    setFruitMessage(null);
   };
 
   const updateVegetableSelection = (key: keyof VegetableSelection, value: number) => {
     setVegetableSelection((previous) => ({ ...previous, [key]: value }));
+    setVegetableMessage(null);
   };
 
   const prepareSalad = async (recipeKey: 'fruit' | 'vegetable') => {
@@ -159,12 +165,20 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
     const selection = recipeKey === 'fruit' ? fruitSelection : vegetableSelection;
 
     if (!hasEnoughIngredients(state, definition)) {
-      onToast('Недостаточно ингредиентов');
+      if (recipeKey === 'fruit') {
+        setFruitMessage('Недостаточно ингредиентов для фруктового салата');
+      } else {
+        setVegetableMessage('Недостаточно ингредиентов для овощного салата');
+      }
       return;
     }
 
     if (!isSelectionExact(selection, definition)) {
-      onToast('Уточни количество ингредиентов ползунком');
+      if (recipeKey === 'fruit') {
+        setFruitMessage('Выстави ползунки на нужное количество');
+      } else {
+        setVegetableMessage('Выстави ползунки на нужное количество');
+      }
       return;
     }
 
@@ -174,6 +188,11 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
         ingredients: selection
       });
       setState(data);
+      if (recipeKey === 'fruit') {
+        setFruitMessage(null);
+      } else {
+        setVegetableMessage(null);
+      }
       onToast('Салат готов!');
     } catch (error) {
       console.error('Failed to prepare salad', error);
@@ -189,11 +208,6 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
     return <div className="card">{error ?? 'Не удалось загрузить кухню'}</div>;
   }
 
-  const fruitAvailable = hasEnoughIngredients(state, FRUIT_RECIPE);
-  const vegetableAvailable = hasEnoughIngredients(state, VEGETABLE_RECIPE);
-  const fruitReady = fruitAvailable && isSelectionExact(fruitSelection, FRUIT_RECIPE);
-  const vegetableReady =
-    vegetableAvailable && isSelectionExact(vegetableSelection, VEGETABLE_RECIPE);
 
   return (
     <div className="grid">
@@ -219,14 +233,7 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               type="range"
               className="kitchen-slider"
               min={0}
-              max={state.vegetables.mango ?? 0}
-              step={1}
-              value={fruitSelection.mango}
-              onChange={(event) => updateFruitSelection('mango', Number(event.target.value))}
-            />
-          ) : null}
-
-          <button
+@@ -230,59 +244,54 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             type="button"
             className="kitchen-ingredient"
             onClick={() => openControl('fruit.yogurt')}
@@ -252,15 +259,10 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             />
           ) : null}
         </div>
-        <button className="btn" disabled={!fruitReady} onClick={() => prepareSalad('fruit')}>
+        <button className="btn" onClick={() => prepareSalad('fruit')}>
           Приготовить
         </button>
-        {!fruitAvailable && (
-          <div className="kitchen-warning">Недостаточно ингредиентов для фруктового салата</div>
-        )}
-        {fruitAvailable && !fruitReady && (
-          <div className="kitchen-warning">Выстави ползунки на нужное количество</div>
-        )}
+        {fruitMessage ? <div className="kitchen-warning">{fruitMessage}</div> : null}
       </div>
 
       <div className="card kitchen-card">
@@ -286,62 +288,7 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               className="kitchen-slider"
               min={0}
               max={state.vegetables.carrot ?? 0}
-              step={1}
-              value={vegetableSelection.carrot}
-              onChange={(event) => updateVegetableSelection('carrot', Number(event.target.value))}
-            />
-          ) : null}
-
-          <button
-            type="button"
-            className="kitchen-ingredient"
-            onClick={() => openControl('veg.cabbage')}
-          >
-            <img src={SEED_ICONS.cabbage} alt="Капуста" />
-            <div>
-              <div className="kitchen-ingredient-name">{SEED_NAMES.cabbage}</div>
-              <div className="kitchen-ingredient-info">
-                Выбрано {formatUnit(vegetableSelection.cabbage, 'pcs')} из {VEGETABLE_RECIPE.veg.cabbage}. Доступно {formatUnit(state.vegetables.cabbage ?? 0, 'pcs')}.
-              </div>
-            </div>
-          </button>
-          {activeControl === 'veg.cabbage' ? (
-            <input
-              type="range"
-              className="kitchen-slider"
-              min={0}
-              max={state.vegetables.cabbage ?? 0}
-              step={1}
-              value={vegetableSelection.cabbage}
-              onChange={(event) => updateVegetableSelection('cabbage', Number(event.target.value))}
-            />
-          ) : null}
-
-          <button
-            type="button"
-            className="kitchen-ingredient"
-            onClick={() => openControl('veg.radish')}
-          >
-            <img src={SEED_ICONS.radish} alt="Редис" />
-            <div>
-              <div className="kitchen-ingredient-name">{SEED_NAMES.radish}</div>
-              <div className="kitchen-ingredient-info">
-                Выбрано {formatUnit(vegetableSelection.radish, 'pcs')} из {VEGETABLE_RECIPE.veg.radish}. Доступно {formatUnit(state.vegetables.radish ?? 0, 'pcs')}.
-              </div>
-            </div>
-          </button>
-          {activeControl === 'veg.radish' ? (
-            <input
-              type="range"
-              className="kitchen-slider"
-              min={0}
-              max={state.vegetables.radish ?? 0}
-              step={1}
-              value={vegetableSelection.radish}
-              onChange={(event) => updateVegetableSelection('radish', Number(event.target.value))}
-            />
-          ) : null}
-
+@@ -345,54 +354,35 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
           <button
             type="button"
             className="kitchen-ingredient"
@@ -367,29 +314,10 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             />
           ) : null}
         </div>
-        <button
-          className="btn"
-          disabled={!vegetableReady}
-          onClick={() => prepareSalad('vegetable')}
-        >
+        <button className="btn" onClick={() => prepareSalad('vegetable')}>
           Приготовить
         </button>
-        {!vegetableAvailable && (
-          <div className="kitchen-warning">Недостаточно ингредиентов для овощного салата</div>
-        )}
-        {vegetableAvailable && !vegetableReady && (
-          <div className="kitchen-warning">Выстави ползунки на нужное количество</div>
-        )}
-      </div>
-
-      <div className="card">
-        <h3>Статистика кухни</h3>
-        <div className="grid">
-          <div className="badge">Йогурт: {formatUnit(state.yogurtMl, 'ml')}</div>
-          <div className="badge">Масло: {formatUnit(state.sunflowerOilMl, 'ml')}</div>
-          <div className="badge">Салатов съедено: {state.saladsEaten}</div>
-          <div className="badge">Фермер {state.isFatFarmer ? 'сыт и пухлый' : 'в форме'}</div>
-        </div>
+        {vegetableMessage ? <div className="kitchen-warning">{vegetableMessage}</div> : null}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { api } from '../../../api';
 import { ToastFn } from '../../../types';
+import { SEED_NAMES } from '../../constants/seeds';
 import { InputField } from '../InputField';
 
 interface SupplyPrice {
@@ -29,6 +30,12 @@ interface ProfileResponse {
   };
 }
 
+interface KitchenSnapshot {
+  vegetables: Record<string, number>;
+  yogurtMl: number;
+  sunflowerOilMl: number;
+}
+
 type ProfileForm = Record<string, string>;
 type ProfileErrors = Record<string, string>;
 
@@ -42,12 +49,27 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   const [form, setForm] = React.useState<ProfileForm>({});
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [kitchen, setKitchen] = React.useState<KitchenSnapshot | null>(null);
 
   const loadProfile = React.useCallback(async () => {
     try {
       setLoadError(null);
-      const { data } = await api.get<ProfileResponse>('/profile');
+      const [profileResult, kitchenResult] = await Promise.allSettled([
+        api.get<ProfileResponse>('/profile'),
+        api.get<KitchenSnapshot>('/kitchen')
+      ]);
+
+      if (profileResult.status !== 'fulfilled') {
+        throw profileResult.reason;
+      }
+
+      const data = profileResult.value.data;
       setProfile(data);
+      if (kitchenResult.status === 'fulfilled') {
+        setKitchen(kitchenResult.value.data);
+      } else {
+        setKitchen(null);
+      }
       setIsCoolFarmer(Boolean(data.isCoolFarmer));
 
       if (data.isCoolFarmer) {
@@ -63,6 +85,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
       console.error('Failed to load profile', error);
       setProfile(null);
       setLoadError('Не удалось загрузить профиль');
+      setKitchen(null);
     }
   }, []);
 
@@ -88,26 +111,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         nextErrors.passport = 'Не заполнено поле';
       } else if (!/^\d{6}$/.test(form.passport)) {
         nextErrors.passport = 'Ошибка валидации';
-      }
-    } else {      const ru = /^[А-ЯЁа-яё\-\s]{2,40}$/;
-      for (const field of ['firstName', 'lastName', 'middleName']) {
-        const value = form[field] ?? '';
-        if (!value) {
-          nextErrors[field] = 'Не заполнено поле';
-        } else if (!ru.test(value)) {
-          nextErrors[field] = 'Ошибка валидации';
-        }
-      }
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const save = async () => {
-    if (!validate()) {
-      return;
-    }
+@@ -112,60 +135,68 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
 
     try {
       await api.put('/profile', { isCoolFarmer, ...form });
@@ -133,7 +137,14 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
     return <div className="card">{loadError ?? 'Загрузка...'}</div>;
   }
 
-  const supplies = profile.prices.supplies;
+  const kitchenVegetables = kitchen?.vegetables ?? {};
+  const vegetableEntries = Object.entries(kitchenVegetables)
+    .filter(([key]) => key in SEED_NAMES)
+    .sort(([a], [b]) => SEED_NAMES[a as keyof typeof SEED_NAMES].localeCompare(SEED_NAMES[b as keyof typeof SEED_NAMES]));
+
+  const fitnessStatus = profile.saladsEaten >= 3 ? 'Ты толстый' : 'Ты худой';
+  const fullName = [profile.lastName, profile.firstName, profile.middleName].filter(Boolean).join(' ');
+  const displayName = (profile.isCoolFarmer ? profile.nickname ?? '' : fullName).trim();
 
   return (
     <div className="grid">
@@ -142,7 +153,8 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         <div className="badge">Продано: {profile.soldCount}</div>
         <div className="badge">Баланс: <span className="money">{profile.balance} ₽</span></div>
         <div className="badge">Салатов съедено: {profile.saladsEaten}</div>
-        <div className="badge">Фермер {profile.isFatFarmer ? 'сыт' : 'в форме'}</div>
+        <div className="badge">{fitnessStatus}</div>
+        {displayName ? <div className="badge">Фермер: {displayName}</div> : null}
       </div>
 
       <div className="card">
@@ -168,11 +180,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
           </div>
         ) : (
           <div className="grid grid-3" style={{ marginTop: 12 }}>
-            <InputField
-              label="Имя"
-              value={form.firstName ?? ''}
-              onChange={(value) => updateField('firstName', value)}
-              error={errors.firstName}
+@@ -177,49 +208,40 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
             />
             <InputField
               label="Фамилия"
@@ -198,23 +206,14 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
 
       <div className="card">
         <h3>Цены и запасы</h3>
-        <div className="grid grid-2">
-          <div className="badge">Покупка: {profile.prices.purchase.basePrice} ₽</div>
-          <div className="badge">Покупка (ур.2): {profile.prices.purchase.advPrice} ₽</div>
-          <div className="badge">Продажа: {profile.prices.sale.basePrice} ₽</div>
-          <div className="badge">Продажа (ур.2): {profile.prices.sale.advPrice} ₽</div>
-        </div>
-        {supplies ? (
-          <div className="grid" style={{ marginTop: 12 }}>
-            <div className="badge">Йогурт: {supplies.yogurt.price} ₽ за {supplies.yogurt.volume} мл</div>
-            <div className="badge">
-              Подсолнечное масло: {supplies.sunflowerOil.price} ₽ за {supplies.sunflowerOil.volume} мл
-            </div>
-          </div>
-        ) : null}
         <div className="grid" style={{ marginTop: 12 }}>
           <div className="badge">Йогурта на складе: {profile.yogurtMl} мл</div>
           <div className="badge">Масла на складе: {profile.sunflowerOilMl} мл</div>
+          {vegetableEntries.map(([type, count]) => (
+            <div key={type} className="badge">
+              {SEED_NAMES[type as keyof typeof SEED_NAMES]} на складе: {count} шт.
+            </div>
+          ))}
         </div>
       </div>
     </div>

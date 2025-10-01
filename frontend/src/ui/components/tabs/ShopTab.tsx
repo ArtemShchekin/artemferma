@@ -159,7 +159,7 @@ export function ShopTab({ onToast }: ShopTabProps) {
           </div>
 
           <div className="card grid">
-            <h3>Семена уровня 2 (по {prices.purchase.advPrice} ₽) — открываются после 50 продаж</h3>
+            <h3>Семена уровня 2 (по {prices.purchase.advPrice} ₽)</h3>
             {ADVANCED_SEED_TYPES.map((type) => (
               <div key={type} className="shop-item" style={{ opacity: profile.level < 2 ? 0.5 : 1 }}>
                 <div className="shop-left">
