@@ -88,8 +88,8 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         nextErrors.passport = 'Не заполнено поле';
       } else if (!/^\d{6}$/.test(form.passport)) {
         nextErrors.passport = 'Ошибка валидации';
-@@ -87,108 +93,133 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
-      const ru = /^[А-ЯЁа-яё\-\s]{2,40}$/;
+      }
+    } else {      const ru = /^[А-ЯЁа-яё\-\s]{2,40}$/;
       for (const field of ['firstName', 'lastName', 'middleName']) {
         const value = form[field] ?? '';
         if (!value) {

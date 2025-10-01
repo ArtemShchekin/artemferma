@@ -83,7 +83,7 @@ components:
           type: object
           properties:
             basePrice: { type: integer }
-             advPrice: { type: integer }
+            advPrice: { type: integer }
         supplies:
           type: object
           properties:
