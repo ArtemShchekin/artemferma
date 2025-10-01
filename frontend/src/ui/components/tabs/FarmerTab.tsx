@@ -1,8 +1,8 @@
 import React from 'react';
 import { api } from '../../../api';
 import { ToastFn } from '../../../types';
-import farmerFit from '../../assets/bg-farmer.svg';
-import farmerFat from '../../assets/bg-farmer-fat.svg';
+import farmerFit from '../../assets/farmer-fit.png';
+import farmerFat from '../../assets/farmer-fat.png';
 
 interface FarmerProfile {
   isFatFarmer: boolean;
