@@ -143,9 +143,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   };
 
   const save = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     try {
       await api.put('/profile', { isCoolFarmer, ...form });
@@ -172,7 +170,8 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         lastName: profile?.lastName ?? '',
         middleName: profile?.middleName ?? ''
       });
-    }  };
+    }
+  };
 
   if (!profile) {
     return <div className="card">{loadError ?? 'Загрузка...'}</div>;
@@ -206,7 +205,30 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
           />
           Ты крутой фермер?
         </label>
-@@ -221,39 +235,43 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
+
+        {isCoolFarmer ? (
+          <div className="grid two-cols" style={{ marginTop: 12 }}>
+            <InputField
+              label="Никнейм"
+              value={form.nickname ?? ''}
+              onChange={(value) => updateField('nickname', value)}
+              error={errors.nickname}
+            />
+            <InputField
+              label="Паспорт (6 цифр)"
+              value={form.passport ?? ''}
+              onChange={(value) => updateField('passport', value)}
+              error={errors.passport}
+            />
+          </div>
+        ) : (
+          <div className="grid two-cols" style={{ marginTop: 12 }}>
+            <InputField
+              label="Имя"
+              value={form.firstName ?? ''}
+              onChange={(value) => updateField('firstName', value)}
+              error={errors.firstName}
+            />
             <InputField
               label="Фамилия"
               value={form.lastName ?? ''}
