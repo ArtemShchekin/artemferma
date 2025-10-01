@@ -17,6 +17,17 @@ interface ProfileResponse {
   prices: {
     purchase: { basePrice: number; advPrice: number };
     sale: { basePrice: number; advPrice: number };
+    yogurtMl: number;
+  sunflowerOilMl: number;
+  saladsEaten: number;
+  isFatFarmer: boolean;
+  prices: {
+    purchase: { basePrice: number; advPrice: number };
+    sale: { basePrice: number; advPrice: number };
+    supplies?: {
+      yogurt: { price: number; volume: number };
+      sunflowerOil: { price: number; volume: number };
+    };
   };
 }
 

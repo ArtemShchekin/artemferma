@@ -54,3 +54,14 @@ body{margin:0;background:#f7f2ef;font-family:FarmHand,system-ui;}
 .auth-question{font-size:14px;color:var(--brown);}
 .auth-secondary{background:none;border:none;padding:0;color:var(--brown);cursor:pointer;text-decoration:underline;font-size:14px;}
 .auth-secondary:hover{text-decoration:none;}
+.kitchen-card{display:flex;flex-direction:column;gap:12px;}
+.kitchen-ingredients{display:flex;flex-direction:column;gap:12px;}
+.kitchen-ingredient{display:flex;align-items:center;gap:12px;padding:8px 12px;border:none;border-radius:12px;background:#fff;border:2px dashed var(--brown);cursor:pointer;text-align:left;}
+.kitchen-ingredient img{width:40px;height:40px;}
+.kitchen-ingredient-name{font-weight:700;color:var(--brown);}
+.kitchen-ingredient-info{font-size:14px;color:#5d4037;}
+.kitchen-slider{width:100%;accent-color:var(--green);}
+.kitchen-warning{margin-top:8px;color:var(--red);font-weight:700;}
+.farmer-card{text-align:center;}
+.farmer-illustration{margin:12px auto;max-width:480px;border:2px solid var(--brown);border-radius:16px;overflow:hidden;box-shadow:0 4px 0 var(--brown);background:#fff;}
+.farmer-illustration img{width:100%;display:block;}

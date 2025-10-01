@@ -56,6 +56,16 @@ const config = {
     saleBase: toInt(process.env.SALE_BASE_PRICE, 4),
     saleAdv: toInt(process.env.SALE_ADV_PRICE, 10)
   },
+    supplies: {
+    yogurt: {
+      price: toInt(process.env.SUPPLY_YOGURT_PRICE, 25),
+      volume: toInt(process.env.SUPPLY_YOGURT_VOLUME, 500)
+    },
+    sunflowerOil: {
+      price: toInt(process.env.SUPPLY_SUNFLOWER_OIL_PRICE, 20),
+      volume: toInt(process.env.SUPPLY_SUNFLOWER_OIL_VOLUME, 50)
+    }
+  },
   garden: {
     slots: toInt(process.env.GARDEN_SLOTS, 6),
     growthMinutes: toInt(process.env.GROWTH_MINUTES, 10)

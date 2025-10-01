@@ -63,6 +63,10 @@ components:
         level: { type: integer, minimum: 1, maximum: 2 }
         soldCount: { type: integer }
         balance: { type: integer }
+        yogurtMl: { type: integer, minimum: 0 }
+        sunflowerOilMl: { type: integer, minimum: 0 }
+        saladsEaten: { type: integer, minimum: 0 }
+        isFatFarmer: { type: boolean }
         prices:
           allOf:
             - $ref: '#/components/schemas/ShopPrices'
@@ -75,6 +79,36 @@ components:
           properties:
             basePrice: { type: integer }
             advPrice: { type: integer }
+                    sale:
+          type: object
+          properties:
+            basePrice: { type: integer }
+            advPrice: { type: integer }
+        supplies:
+          type: object
+          properties:
+            yogurt: { $ref: '#/components/schemas/SupplyPrice' }
+            sunflowerOil: { $ref: '#/components/schemas/SupplyPrice' }
+    SupplyPrice:
+      type: object
+      properties:
+        price: { type: integer }
+        volume: { type: integer }
+    KitchenState:
+      type: object
+      properties:
+        vegetables:
+          type: object
+          properties:
+            mango: { type: integer, minimum: 0 }
+            carrot: { type: integer, minimum: 0 }
+            cabbage: { type: integer, minimum: 0 }
+            radish: { type: integer, minimum: 0 }
+          additionalProperties: false
+        yogurtMl: { type: integer, minimum: 0 }
+        sunflowerOilMl: { type: integer, minimum: 0 }
+        saladsEaten: { type: integer, minimum: 0 }
+        isFatFarmer: { type: boolean }
     InventoryItem:
       type: object
       properties:
@@ -162,6 +196,23 @@ paths:
       responses:
         '200':
           description: OK
+  /profile/{id}:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Получить профиль по идентификатору
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '404':
+          description: Не найдено
   /shop/buy:
     post:
       security: [{ bearerAuth: [] }]
@@ -180,7 +231,25 @@ paths:
       responses:
         '200':
           description: OK
-      /shop/prices:
+  /shop/buy-supply:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Купить товар для кухни
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supply]
+              properties:
+                supply:
+                  type: string
+                  enum: [yogurt, sunflowerOil]
+      responses:
+        '200':
+          description: OK
+  /shop/prices:
     get:
       security: [{ bearerAuth: [] }]
       summary: Получить цены магазина
@@ -206,6 +275,40 @@ paths:
       responses:
         '200':
           description: OK
+  /kitchen:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Получить состояние кухни
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KitchenState' }
+  /kitchen/salads:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Приготовить салат
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe]
+              properties:
+                recipe:
+                  type: string
+                  enum: [fruit, vegetable]
+                ingredients:
+                  type: object
+                  additionalProperties: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KitchenState' }
   /inventory:
     get:
       security: [{ bearerAuth: [] }]

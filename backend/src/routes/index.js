@@ -4,6 +4,7 @@ import profileRouter from './profile.js';
 import shopRouter from './shop.js';
 import inventoryRouter from './inventory.js';
 import gardenRouter from './garden.js';
+import kitchenRouter from './kitchen.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
@@ -17,5 +18,6 @@ router.use('/profile', profileRouter);
 router.use('/shop', shopRouter);
 router.use('/inventory', inventoryRouter);
 router.use('/garden', gardenRouter);
+router.use('/kitchen', kitchenRouter);
 
 export default router;

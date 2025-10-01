@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="skyFat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b7e3ff"/>
+      <stop offset="100%" stop-color="#ffe0b2"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#skyFat)"/>
+  <g transform="translate(400,260)">
+    <ellipse cx="0" cy="140" rx="360" ry="90" fill="#c2e59c"/>
+    <g transform="translate(-170,-130) scale(1.35)">
+      <circle cx="170" cy="80" r="80" fill="#ffd1a1" stroke="#7a4f2c" stroke-width="6"/>
+      <rect x="80" y="-5" width="180" height="70" rx="12" fill="#5a7d3b" stroke="#2f4f2f" stroke-width="6"/>
+      <rect x="60" y="60" width="220" height="160" rx="32" fill="#ff9f68" stroke="#7a4f2c" stroke-width="6"/>
+      <circle cx="130" cy="80" r="10" fill="#333"/>
+      <circle cx="210" cy="80" r="10" fill="#333"/>
+      <path d="M140 120 Q170 150 200 120" stroke="#7a4f2c" stroke-width="6" fill="none"/>
+      <rect x="40" y="140" width="40" height="100" rx="16" fill="#ffb347" stroke="#7a4f2c" stroke-width="6"/>
+      <rect x="260" y="140" width="40" height="100" rx="16" fill="#ffb347" stroke="#7a4f2c" stroke-width="6"/>
+      <rect x="110" y="200" width="120" height="80" rx="20" fill="#5a7d3b" stroke="#2f4f2f" stroke-width="6"/>
+    </g>
+    <g transform="translate(-360,170)">
+      <rect x="0" y="0" width="720" height="40" fill="#8d6e63" rx="6"/>
+      <rect x="0" y="20" width="720" height="70" fill="#795548" rx="6"/>
+    </g>
+  </g>
+</svg>

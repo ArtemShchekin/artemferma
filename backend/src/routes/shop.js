@@ -20,6 +20,16 @@ router.get(
       sale: {
         basePrice: config.prices.saleBase,
         advPrice: config.prices.saleAdv
+      },
+      supplies: {
+        yogurt: {
+          price: config.supplies.yogurt.price,
+          volume: config.supplies.yogurt.volume
+        },
+        sunflowerOil: {
+          price: config.supplies.sunflowerOil.price,
+          volume: config.supplies.sunflowerOil.volume
+        }
       }
     };
 
@@ -76,6 +86,67 @@ router.post(
       userId: req.user.id,
       type,
       price,
+      response
+    });
+  })
+);
+
+router.post(
+  '/buy-supply',
+  asyncHandler(async (req, res) => {
+    const { supply } = req.body || {};
+    if (!supply) {
+      throw new RequiredFieldError();
+    }
+
+    if (!['yogurt', 'sunflowerOil'].includes(supply)) {
+      throw new ValidationError();
+    }
+
+    let price = 0;
+    let volume = 0;
+
+    await withTransaction(async (connection) => {
+      const profile = await ensureProfileWithConnection(connection, req.user.id);
+
+      if (supply === 'yogurt') {
+        price = config.supplies.yogurt.price;
+        volume = config.supplies.yogurt.volume;
+      } else {
+        price = config.supplies.sunflowerOil.price;
+        volume = config.supplies.sunflowerOil.volume;
+      }
+
+      if (profile.balance < price) {
+        throw new ValidationError();
+      }
+
+      const updates = ['balance = balance - ?'];
+      const params = [price];
+
+      if (supply === 'yogurt') {
+        updates.push('yogurt_ml = yogurt_ml + ?');
+      } else {
+        updates.push('sunflower_oil_ml = sunflower_oil_ml + ?');
+      }
+      params.push(volume, req.user.id);
+
+      await connection.query(
+        `UPDATE profiles SET ${updates.join(', ')} WHERE user_id = ?`,
+        params
+      );
+    });
+
+    const response = { ok: true, price, volume };
+    res.json(response);
+    logApi('Supply purchased', {
+      event: 'shop.buySupply',
+      method: 'POST',
+      path: '/api/shop/buy-supply',
+      userId: req.user.id,
+      supply,
+      price,
+      volume,
       response
     });
   })

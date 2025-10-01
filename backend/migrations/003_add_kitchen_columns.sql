@@ -1,0 +1,4 @@
+ALTER TABLE profiles
+  ADD COLUMN yogurt_ml INT NOT NULL DEFAULT 0,
+  ADD COLUMN sunflower_oil_ml INT NOT NULL DEFAULT 0,
+  ADD COLUMN salads_eaten INT NOT NULL DEFAULT 0;

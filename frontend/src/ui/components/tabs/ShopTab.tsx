@@ -3,6 +3,8 @@ import { api } from '../../../api';
 import { ToastFn } from '../../../types';
 import icBuy from '../../assets/btn-buy.svg';
 import icSell from '../../assets/btn-sell.svg';
+import yogurtIcon from '../../assets/yogurt.svg';
+import sunflowerOilIcon from '../../assets/sunflower-oil.svg';
 
 import {
   ADVANCED_SEED_TYPES,
@@ -15,6 +17,15 @@ import {
 interface PricesResponse {
   purchase: { basePrice: number; advPrice: number };
   sale: { basePrice: number; advPrice: number };
+  interface SupplyPrice {
+  price: number;
+  volume: number;
+}
+
+interface PricesResponse {
+  purchase: { basePrice: number; advPrice: number };
+  sale: { basePrice: number; advPrice: number };
+  supplies: { yogurt: SupplyPrice; sunflowerOil: SupplyPrice };
 }
 
 interface ProfileSummary {
@@ -104,6 +115,19 @@ export function ShopTab({ onToast }: ShopTabProps) {
       onToast('Не удалось продать урожай');
     }
   };
+  const handleBuySupply = async (supply: 'yogurt' | 'sunflowerOil') => {
+    try {
+      await api.post('/shop/buy-supply', { supply });
+      onToast('Куплено');
+      const refreshed = await loadData();
+      if (!refreshed) {
+        onToast('Не удалось обновить данные магазина');
+      }
+    } catch (error) {
+      console.error('Failed to buy supply', error);
+      onToast('Не удалось купить товар');
+    }
+  };
 
   if (!profile || !prices) {
     return <div className="card">{error ?? 'Загрузка...'}</div>;
@@ -150,6 +174,27 @@ export function ShopTab({ onToast }: ShopTabProps) {
                 </button>
               </div>
             ))}
+          </div>
+          <div className="card grid">
+            <h3>Продукты для кухни</h3>
+            <div className="shop-item">
+              <div className="shop-left">
+                <img src={yogurtIcon} alt="" />
+                <div>Йогурт ({prices.supplies.yogurt.volume} мл)</div>
+              </div>
+              <button className="btn" onClick={() => handleBuySupply('yogurt')}>
+                <img src={icBuy} alt="" /> Купить за {prices.supplies.yogurt.price} ₽
+              </button>
+            </div>
+            <div className="shop-item">
+              <div className="shop-left">
+                <img src={sunflowerOilIcon} alt="" />
+                <div>Подсолнечное масло ({prices.supplies.sunflowerOil.volume} мл)</div>
+              </div>
+              <button className="btn" onClick={() => handleBuySupply('sunflowerOil')}>
+                <img src={icBuy} alt="" /> Купить за {prices.supplies.sunflowerOil.price} ₽
+              </button>
+            </div>
           </div>
         </div>
       ) : (

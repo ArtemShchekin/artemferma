@@ -3,19 +3,25 @@ import icProfile from '../assets/tab-profile.svg';
 import icShop from '../assets/tab-shop.svg';
 import icGarden from '../assets/tab-garden.svg';
 import icInventory from '../assets/tab-inventory.svg';
+import icKitchen from '../assets/tab-kitchen.svg';
+import icFarmer from '../assets/tab-farmer.svg';
 import { ToastFn } from '../types';
 import { ProfileTab } from './tabs/ProfileTab';
 import { ShopTab } from './tabs/ShopTab';
 import { GardenTab } from './tabs/GardenTab';
 import { InventoryTab } from './tabs/InventoryTab';
+import { KitchenTab } from './tabs/KitchenTab';
+import { FarmerTab } from './tabs/FarmerTab';
 
-type TabKey = 'profile' | 'shop' | 'garden' | 'inventory';
+type TabKey = 'profile' | 'shop' | 'garden' | 'inventory' | 'kitchen' | 'farmer';
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'profile', label: 'Профиль', icon: icProfile },
   { key: 'shop', label: 'Магазин', icon: icShop },
   { key: 'garden', label: 'Грядка', icon: icGarden },
-  { key: 'inventory', label: 'Инвентарь', icon: icInventory }
+  { key: 'inventory', label: 'Инвентарь', icon: icInventory },
+  { key: 'kitchen', label: 'Кухня', icon: icKitchen },
+  { key: 'farmer', label: 'Фермер', icon: icFarmer }
 ];
 
 interface MainLayoutProps {
@@ -56,6 +62,8 @@ export function MainLayout({ onLogout, onToast }: MainLayoutProps) {
         {activeTab === 'shop' && <ShopTab onToast={onToast} />}
         {activeTab === 'garden' && <GardenTab onToast={onToast} />}
         {activeTab === 'inventory' && <InventoryTab onToast={onToast} />}
+        {activeTab === 'kitchen' && <KitchenTab onToast={onToast} />}
+        {activeTab === 'farmer' && <FarmerTab onToast={onToast} />}
       </main>
     </>
   );
