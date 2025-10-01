@@ -172,12 +172,12 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
       });
     }
   };
+  const vegetableBadges = React.useMemo(() => collectVegetableBadges(kitchen), [kitchen]);
 
   if (!profile) {
     return <div className="card">{loadError ?? 'Загрузка...'}</div>;
   }
 
-  const vegetableBadges = React.useMemo(() => collectVegetableBadges(kitchen), [kitchen]);
   const yogurtLeft = kitchen?.yogurtMl ?? profile.yogurtMl;
   const oilLeft = kitchen?.sunflowerOilMl ?? profile.sunflowerOilMl;
   const fitnessStatus = profile.saladsEaten >= 3 ? 'Ты толстый' : 'Ты худой';
