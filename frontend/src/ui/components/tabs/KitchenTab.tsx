@@ -87,17 +87,27 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [fruitMessage, setFruitMessage] = React.useState<string | null>(null);
-  const [vegetableMessage, setVegetableMessage] = React.useState<string | null>(null);
+  const stateRef = React.useRef<KitchenState | null>(null);
+
+  React.useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get<KitchenState>('/kitchen');
-      setState(data);
+      const nextState = data ?? stateRef.current;
+      if (!nextState) {
+        throw new Error('Kitchen payload is empty');
+      }
+      setState(nextState);
       setError(null);
     } catch (loadError) {
       console.error('Failed to load kitchen', loadError);
-      setState(null);
+      if (!stateRef.current) {
+        setState(null);
+      }
       setError('Не удалось загрузить кухню');
     } finally {
       setLoading(false);

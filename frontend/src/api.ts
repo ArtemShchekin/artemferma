@@ -15,8 +15,20 @@ interface RetryableRequestConfig extends AxiosRequestConfig {
 }
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || '/api'
+  baseURL: import.meta.env.VITE_API_BASE || '/api',
+  validateStatus: (status) => (status >= 200 && status < 300) || status === 304
 })
+
+api.interceptors.request.use((config) => {
+  const method = (config.method ?? 'get').toLowerCase()
+  if (method === 'get') {
+    const headers = (config.headers ?? {}) as Record<string, string>
+    headers['Cache-Control'] = 'no-cache'
+    headers.Pragma = 'no-cache'
+    headers['If-Modified-Since'] = '0'
+    config.headers = headers
+  }
+  return config})
 
 let currentTokens: AuthTokens | null = null
 let refreshPromise: Promise<AuthTokens | null> | null = null

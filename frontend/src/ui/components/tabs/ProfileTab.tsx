@@ -61,11 +61,21 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   const [form, setForm] = React.useState<ProfileForm>(EMPTY_NAME_FORM);
   const [errors, setErrors] = React.useState<ProfileErrors>({});
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const profileRef = React.useRef<ProfileResponse | null>(null);
+  const kitchenRef = React.useRef<KitchenSnapshot | null>(null);
 
+  React.useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  React.useEffect(() => {
+    kitchenRef.current = kitchen;
+  }, [kitchen]);
+  
   const loadProfile = React.useCallback(async () => {
     try {
       setLoadError(null);
-      const [{ data: profileData }, kitchenResult] = await Promise.all([
+      const [profileResult, kitchenResult] = await Promise.all([
         api.get<ProfileResponse>('/profile'),
         api
           .get<KitchenSnapshot>('/kitchen')
