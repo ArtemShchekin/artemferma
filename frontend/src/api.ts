@@ -18,7 +18,11 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
   validateStatus: (status) => (status >= 200 && status < 300) || status === 304
 })
+
+const isBrowser = typeof window !== 'undefined'
+
 const cachedGetResponses = new Map<string, unknown>()
+const CACHE_STORAGE_PREFIX = 'apiCache:'
 
 function getCacheKey(config?: AxiosRequestConfig) {
   if (!config?.url) return null
@@ -30,6 +34,57 @@ function getCacheKey(config?: AxiosRequestConfig) {
   return `${config.url}?${params}`
 }
 
+function readCachedGetResponse(cacheKey: string): unknown | undefined {
+  if (cachedGetResponses.has(cacheKey)) {
+    return cachedGetResponses.get(cacheKey)
+  }
+
+  if (!isBrowser) return undefined
+
+  const stored = window.sessionStorage.getItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`)
+  if (!stored) return undefined
+
+  try {
+    const parsed = JSON.parse(stored)
+    cachedGetResponses.set(cacheKey, parsed)
+    return parsed
+  } catch (_error) {
+    window.sessionStorage.removeItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`)
+    return undefined
+  }
+}
+
+function writeCachedGetResponse(cacheKey: string, data: unknown) {
+  cachedGetResponses.set(cacheKey, data)
+
+  if (!isBrowser) return
+
+  try {
+    window.sessionStorage.setItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`, JSON.stringify(data))
+  } catch (_error) {
+    // If sessionStorage is not available or quota exceeded we silently ignore caching there.
+  }
+}
+
+function clearCachedGetResponses() {
+  cachedGetResponses.clear()
+
+  if (!isBrowser) return
+
+  for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = window.sessionStorage.key(index)
+    if (key?.startsWith(CACHE_STORAGE_PREFIX)) {
+      window.sessionStorage.removeItem(key)
+    }
+  }
+}
+
+function isEmptyResponseData(data: unknown) {
+  if (data === undefined || data === null) return true
+  if (typeof data === 'string') return data.trim().length === 0
+  return false
+}
+
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase()
   if (method === 'get') {
@@ -39,11 +94,11 @@ api.interceptors.request.use((config) => {
     headers['If-Modified-Since'] = '0'
     config.headers = headers
   }
-  return config})
+  return config
+})
 
 let currentTokens: AuthTokens | null = null
 let refreshPromise: Promise<AuthTokens | null> | null = null
-const isBrowser = typeof window !== 'undefined'
 
 function setAuthHeader(token: string | null) {
   if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -69,10 +124,7 @@ export function initializeAuthTokens(): AuthTokens | null {
   const stored = parseTokens(window.localStorage.getItem(AUTH_STORAGE_KEY))
   if (window.localStorage.getItem('token')) {
     window.localStorage.removeItem('token')
-  }
-  currentTokens = stored
-  setAuthHeader(stored?.accessToken ?? null)
-  if (stored) {
+@@ -78,104 +131,106 @@ export function initializeAuthTokens(): AuthTokens | null {
     return { ...stored }
   }
   return null
@@ -98,7 +150,7 @@ export function clearAuthTokens({ emitEvent = true }: { emitEvent?: boolean } = 
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
   }
   setAuthHeader(null)
-  cachedGetResponses.clear()
+  clearCachedGetResponses()
   if (emitEvent) {
     emitTokens(null)
   }
@@ -141,23 +193,26 @@ api.interceptors.response.use(
     const cacheKey = getCacheKey(response.config)
 
     if (cacheKey) {
+      const cachedData = readCachedGetResponse(cacheKey)
+
       if (response.status === 304) {
-        if (cachedGetResponses.has(cacheKey)) {
-          response.data = cachedGetResponses.get(cacheKey)
+        if (cachedData !== undefined) {
+          response.data = cachedData
         }
       } else if (response.status >= 200 && response.status < 300) {
-        if (response.data === undefined || response.data === null) {
-          if (cachedGetResponses.has(cacheKey)) {
-            response.data = cachedGetResponses.get(cacheKey)
+        if (isEmptyResponseData(response.data)) {
+          if (cachedData !== undefined) {
+            response.data = cachedData
           }
         } else {
-          cachedGetResponses.set(cacheKey, response.data)
+          writeCachedGetResponse(cacheKey, response.data)
         }
       }
     }
 
     return response
-  },  async (error: AxiosError) => {
+  },
+  async (error: AxiosError) => {
     const response = error.response
     const originalRequest = error.config as RetryableRequestConfig | undefined
 
