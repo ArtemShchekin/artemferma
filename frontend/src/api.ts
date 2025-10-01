@@ -199,7 +199,6 @@ export function initializeAuthTokens(): AuthTokens | null {
   const stored = parseTokens(window.localStorage.getItem(AUTH_STORAGE_KEY))
   if (window.localStorage.getItem('token')) {
     window.localStorage.removeItem('token')
-@@ -78,104 +131,106 @@ export function initializeAuthTokens(): AuthTokens | null {
     return { ...stored }
   }
   return null
