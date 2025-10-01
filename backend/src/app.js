@@ -7,11 +7,19 @@ import { requestLogger } from './middleware/request-logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { loadOpenApi } from './utils/openapi.js';
 
+function buildFallbackSpec() {
+  return {
+    openapi: '3.0.0',
+    info: {
+      title: 'API documentation unavailable',
+      version: '1.0.0',
+      description: 'Не удалось загрузить спецификацию OpenAPI. Проверьте логи сервера.'
+    }
+  };
+}
+
 function setupSwagger(app) {
   const openapi = loadOpenApi();
-  if (!openapi) {
-    return;
-  }
 
   const swaggerUiOptions = {
     explorer: true,
@@ -21,11 +29,15 @@ function setupSwagger(app) {
   };
 
   app.get('/api/docs/openapi.json', (_req, res) => {
-    res.json(openapi);
-  });
+    if (openapi) {
+      res.json(openapi);
+    } else {
+      res.status(503).json(buildFallbackSpec());
+    }
+    });
 
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi, swaggerUiOptions));
-
+  const specForUi = openapi ?? buildFallbackSpec();
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specForUi, swaggerUiOptions));
 }
 
 export function createApp() {
