@@ -32,12 +32,10 @@ function buildFallbackSpec() {
 }
 
 function setupSwagger(app) {
-  const openapi = loadOpenApi();
   const swaggerUiOptions = {
     explorer: true,
     swaggerOptions: {
-      persistAuthorization: true,
-      url: '/api/docs/openapi.json'
+      persistAuthorization: true
     }
   };
 
@@ -50,7 +48,8 @@ function setupSwagger(app) {
     }
   });
 
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(null, swaggerUiOptions));
+  const swaggerDocument = loadOpenApi() ?? buildFallbackSpec();
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerUiOptions));
 }
 
 export function createApp() {
