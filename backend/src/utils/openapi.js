@@ -13,7 +13,20 @@ export function loadOpenApi() {
     const openapiUrl = new URL('../../openapi.yaml', import.meta.url);
     const openapiPath = fileURLToPath(openapiUrl);
     const raw = fs.readFileSync(openapiPath, 'utf-8');
-    cachedSpec = YAML.parse(raw);
+    const parsed = YAML.parse(raw);
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('OpenAPI specification is empty');
+    }
+
+    const hasOperations =
+      parsed.paths && typeof parsed.paths === 'object' && Object.keys(parsed.paths).length > 0;
+
+    if (!hasOperations) {
+      throw new Error('OpenAPI specification contains no paths');
+    }
+
+    cachedSpec = parsed;
     return cachedSpec;
   } catch (error) {
     logError('Failed to load OpenAPI specification', {

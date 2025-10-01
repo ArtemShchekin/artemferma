@@ -1,36 +1,50 @@
 import React from 'react';
-import { setToken as applyTokenToClient } from '../../api';
-
-const STORAGE_KEY = 'token';
+import {
+  AUTH_LOGOUT_EVENT,
+  AUTH_TOKENS_EVENT,
+  AuthTokens,
+  applyAuthTokens,
+  forceLogout,
+  initializeAuthTokens
+} from '../../api';
 
 export function useAuthToken() {
-  const [token, setTokenState] = React.useState<string | null>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      applyTokenToClient(saved);
-    }
-    return saved;
-  });
-  React.useEffect(() => {
-    applyTokenToClient(token);
-  }, [token]);
+  const [tokens, setTokens] = React.useState<AuthTokens | null>(() => initializeAuthTokens());
 
-  const login = React.useCallback((nextToken: string) => {
-    applyTokenToClient(nextToken);
-    localStorage.setItem(STORAGE_KEY, nextToken);
-    setTokenState(nextToken);
+  React.useEffect(() => {
+    const tokenListener: EventListener = (event) => {
+      const detail = (event as CustomEvent<AuthTokens | null>).detail ?? null;
+      setTokens(detail);
+    };
+
+    const logoutListener = () => {
+      setTokens(null);
+    };
+
+    window.addEventListener(AUTH_TOKENS_EVENT, tokenListener);
+    window.addEventListener(AUTH_LOGOUT_EVENT, logoutListener);
+
+    return () => {
+      window.removeEventListener(AUTH_TOKENS_EVENT, tokenListener);
+      window.removeEventListener(AUTH_LOGOUT_EVENT, logoutListener);
+    };
+  }, []);
+
+  const login = React.useCallback((nextTokens: AuthTokens) => {
+    setTokens(nextTokens);
+    applyAuthTokens(nextTokens);
   }, []);
 
   const logout = React.useCallback(() => {
-    applyTokenToClient(null);
-    localStorage.removeItem(STORAGE_KEY);
-    setTokenState(null);
+    setTokens(null);
+    forceLogout();
   }, []);
 
   return {
-    token,
+    token: tokens?.accessToken ?? null,
+    refreshToken: tokens?.refreshToken ?? null,
     login,
     logout,
-    isAuthenticated: Boolean(token)
+    isAuthenticated: Boolean(tokens?.accessToken)
   };
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthPage from './ui/components/AuthPage';
 import MainLayout from './ui/components/MainLayout';
+import { AuthTokens } from './api';
 import { useAuthToken } from './ui/hooks/useAuthToken';
 
 export default function App() {
@@ -44,9 +45,9 @@ export default function App() {
     }
   }, []);
 
-  const handleLoginSuccess = (newToken: string) => {
+  const handleLoginSuccess = (tokens: AuthTokens) => {
     showToast('Вход выполнен');
-    login(newToken);
+    login(tokens);
     window.history.replaceState(null, '', '/');
   };
 

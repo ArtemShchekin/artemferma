@@ -1,14 +1,14 @@
 import React from 'react';
-import { api } from '../../api';
+import { api, AuthTokens } from '../../api';
 import { InputField } from './InputField';
 
 interface AuthPageProps {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (tokens: AuthTokens) => void;
   onRegisterSuccess: () => void;
 }
 
 interface LoginFormProps {
-  onSuccess: (token: string) => void;
+  onSuccess: (tokens: AuthTokens) => void;
   onSwitchToRegister: () => void;
 }
 
@@ -34,20 +34,7 @@ export function AuthPage({ onLoginSuccess, onRegisterSuccess }: AuthPageProps) {
               }}
               onSwitchToLogin={() => setMode('login')}
             />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [emailError, setEmailError] = React.useState<string | null>(null);
-  const [passwordError, setPasswordError] = React.useState<string | null>(null);
-
-  const validate = () => {
+@@ -51,55 +51,55 @@ function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     setEmailError(null);
     setPasswordError(null);
 
@@ -73,11 +60,11 @@ function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     }
 
     try {
-      const { data } = await api.post<{ accessToken?: string }>('/auth/login', { email, password });
-      if (!data?.accessToken) {
-        throw new Error('Missing access token');
+      const { data } = await api.post<AuthTokens>('/auth/login', { email, password });
+      if (!data?.accessToken || !data?.refreshToken) {
+        throw new Error('Missing tokens');
       }
-      onSuccess(data.accessToken);
+      onSuccess(data);
     } catch (error) {
       setPasswordError('Ошибка валидации');
     }

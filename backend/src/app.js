@@ -14,17 +14,30 @@ function buildFallbackSpec() {
       title: 'API documentation unavailable',
       version: '1.0.0',
       description: 'Не удалось загрузить спецификацию OpenAPI. Проверьте логи сервера.'
+    },
+    paths: {
+      '/__docs-unavailable': {
+        get: {
+          summary: 'Документация временно недоступна',
+          description: 'Спецификация OpenAPI не была загружена при старте сервера.',
+          responses: {
+            '503': {
+              description: 'Спецификация не загружена'
+            }
+          }
+        }
+      }
     }
   };
 }
 
 function setupSwagger(app) {
   const openapi = loadOpenApi();
-
   const swaggerUiOptions = {
     explorer: true,
     swaggerOptions: {
-      persistAuthorization: true
+      persistAuthorization: true,
+      url: '/api/docs/openapi.json'
     }
   };
 
