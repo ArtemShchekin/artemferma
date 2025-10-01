@@ -24,6 +24,59 @@ const isBrowser = typeof window !== 'undefined'
 const cachedGetResponses = new Map<string, unknown>()
 const CACHE_STORAGE_PREFIX = 'apiCache:'
 
+function getSessionStorage(): Storage | null {
+  if (!isBrowser) return null
+  try {
+    return window.sessionStorage
+  } catch (_error) {
+    return null
+  }
+}
+
+function getLocalStorage(): Storage | null {
+  if (!isBrowser) return null
+  try {
+    return window.localStorage
+  } catch (_error) {
+    return null
+  }
+}
+
+function getCacheStorages(): Storage[] {
+  const storages: Storage[] = []
+  const session = getSessionStorage()
+  const local = getLocalStorage()
+
+  if (session) storages.push(session)
+  if (local) storages.push(local)
+
+  return storages
+}
+
+function safeGetItem(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key)
+  } catch (_error) {
+    return null
+  }
+}
+
+function safeSetItem(storage: Storage, key: string, value: string) {
+  try {
+    storage.setItem(key, value)
+  } catch (_error) {
+    // Ignore write errors (e.g. quota exceeded)
+  }
+}
+
+function safeRemoveItem(storage: Storage, key: string) {
+  try {
+    storage.removeItem(key)
+  } catch (_error) {
+    // Ignore removal errors (e.g. storage unavailable)
+  }
+}
+
 function getCacheKey(config?: AxiosRequestConfig) {
   if (!config?.url) return null
 
@@ -41,17 +94,30 @@ function readCachedGetResponse(cacheKey: string): unknown | undefined {
 
   if (!isBrowser) return undefined
 
-  const stored = window.sessionStorage.getItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`)
-  if (!stored) return undefined
+  const storageKey = `${CACHE_STORAGE_PREFIX}${cacheKey}`
+  const storages = getCacheStorages()
+  const sessionStorageInstance = getSessionStorage()
 
-  try {
-    const parsed = JSON.parse(stored)
-    cachedGetResponses.set(cacheKey, parsed)
-    return parsed
-  } catch (_error) {
-    window.sessionStorage.removeItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`)
-    return undefined
+  for (const storage of storages) {
+    const stored = safeGetItem(storage, storageKey)
+    if (!stored) continue
+
+    try {
+      const parsed = JSON.parse(stored)
+      cachedGetResponses.set(cacheKey, parsed)
+
+      // Ensure the value is duplicated in faster storages for subsequent reads.
+      if (sessionStorageInstance && storage !== sessionStorageInstance) {
+        safeSetItem(sessionStorageInstance, storageKey, stored)
+      }
+
+      return parsed
+    } catch (_error) {
+      safeRemoveItem(storage, storageKey)
+    }
   }
+
+  return undefined
 }
 
 function writeCachedGetResponse(cacheKey: string, data: unknown) {
@@ -59,10 +125,17 @@ function writeCachedGetResponse(cacheKey: string, data: unknown) {
 
   if (!isBrowser) return
 
+  const storageKey = `${CACHE_STORAGE_PREFIX}${cacheKey}`
+
+  let payload: string
   try {
-    window.sessionStorage.setItem(`${CACHE_STORAGE_PREFIX}${cacheKey}`, JSON.stringify(data))
+    payload = JSON.stringify(data)
   } catch (_error) {
-    // If sessionStorage is not available or quota exceeded we silently ignore caching there.
+    return
+  }
+
+  for (const storage of getCacheStorages()) {
+    safeSetItem(storage, storageKey, payload)
   }
 }
 
@@ -71,10 +144,12 @@ function clearCachedGetResponses() {
 
   if (!isBrowser) return
 
-  for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
-    const key = window.sessionStorage.key(index)
-    if (key?.startsWith(CACHE_STORAGE_PREFIX)) {
-      window.sessionStorage.removeItem(key)
+  for (const storage of getCacheStorages()) {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index)
+      if (key?.startsWith(CACHE_STORAGE_PREFIX)) {
+        safeRemoveItem(storage, key)
+      }
     }
   }
 }
