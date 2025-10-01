@@ -161,14 +161,27 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   const toggleCool = (next: boolean) => {
     setIsCoolFarmer(next);
     setErrors({});
-    setForm(next ? { ...EMPTY_COOL_FORM } : { ...EMPTY_NAME_FORM });
-  };
+
+    if (next) {
+      setForm({
+        nickname: profile?.nickname ?? '',
+        passport: profile?.passport ?? ''
+      });
+    } else {
+      setForm({
+        firstName: profile?.firstName ?? '',
+        lastName: profile?.lastName ?? '',
+        middleName: profile?.middleName ?? ''
+      });
+    }  };
 
   if (!profile) {
     return <div className="card">{loadError ?? 'Загрузка...'}</div>;
   }
 
   const vegetableBadges = React.useMemo(() => collectVegetableBadges(kitchen), [kitchen]);
+  const yogurtLeft = kitchen?.yogurtMl ?? profile.yogurtMl;
+  const oilLeft = kitchen?.sunflowerOilMl ?? profile.sunflowerOilMl;
   const fitnessStatus = profile.saladsEaten >= 3 ? 'Ты толстый' : 'Ты худой';
   const displayName = (profile.isCoolFarmer ? profile.nickname ?? '' : buildFullName(profile)).trim();
 
@@ -194,30 +207,9 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
           />
           Ты крутой фермер?
         </label>
-
-        {isCoolFarmer ? (
-          <div className="grid grid-2" style={{ marginTop: 12 }}>
+@@ -221,39 +235,43 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
             <InputField
-              label="Прозвище"
-              value={form.nickname ?? ''}
-              onChange={(value) => updateField('nickname', value)}
-              error={errors.nickname}
-            />
-            <InputField
-              label="Паспорт фермера"
-              value={form.passport ?? ''}
-              onChange={(value) => updateField('passport', value)}
-              error={errors.passport}
-            />
-          </div>
-        ) : (
-          <div className="grid grid-3" style={{ marginTop: 12 }}>
-            <InputField
-              label="Имя"
-              value={form.firstName ?? ''}
-              onChange={(value) => updateField('firstName', value)}
-              error={errors.firstName}
-@@ -211,37 +223,37 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
+              label="Фамилия"
               value={form.lastName ?? ''}
               onChange={(value) => updateField('lastName', value)}
               error={errors.lastName}
@@ -241,13 +233,17 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
       <div className="card">
         <h3>Цены и запасы</h3>
         <div className="grid" style={{ marginTop: 12 }}>
-          <div className="badge">Йогурта на складе: {profile.yogurtMl} мл</div>
-          <div className="badge">Масла на складе: {profile.sunflowerOilMl} мл</div>
-          {vegetableBadges.map((badge) => (
-            <div key={badge.key} className="badge">
-              {badge.label}
-            </div>
-          ))}
+          <div className="badge">Йогурта на складе: {yogurtLeft} мл</div>
+          <div className="badge">Масла на складе: {oilLeft} мл</div>
+          {vegetableBadges.length > 0 ? (
+            vegetableBadges.map((badge) => (
+              <div key={badge.key} className="badge">
+                {badge.label}
+              </div>
+            ))
+          ) : (
+            <div className="badge">Данные по овощам недоступны</div>
+          )}
         </div>
       </div>
     </div>
