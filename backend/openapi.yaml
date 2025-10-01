@@ -79,11 +79,11 @@ components:
           properties:
             basePrice: { type: integer }
             advPrice: { type: integer }
-                    sale:
-          type: object
-          properties:
-            basePrice: { type: integer }
-            advPrice: { type: integer }
+            sale:
+              type: object
+              properties:
+                basePrice: { type: integer }
+                advPrice: { type: integer }
         supplies:
           type: object
           properties:
