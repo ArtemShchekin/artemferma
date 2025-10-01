@@ -42,15 +42,15 @@ function setupSwagger(app) {
   };
 
   app.get('/api/docs/openapi.json', (_req, res) => {
-    if (openapi) {
-      res.json(openapi);
+    const spec = loadOpenApi();
+    if (spec) {
+      res.json(spec);
     } else {
-      res.status(503).json(buildFallbackSpec());
+      res.status(200).json(buildFallbackSpec());
     }
-    });
+  });
 
-  const specForUi = openapi ?? buildFallbackSpec();
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specForUi, swaggerUiOptions));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(null, swaggerUiOptions));
 }
 
 export function createApp() {

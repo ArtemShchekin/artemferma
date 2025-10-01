@@ -24,3 +24,7 @@ nginx/nginx.conf.bak-*
 # nginx backups
 nginx/nginx.conf.bak*
 *.bak
+
+frontend.zip
+
+frontend.zip
