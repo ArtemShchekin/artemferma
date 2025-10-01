@@ -3,6 +3,10 @@ import { api } from '../../../api';
 import { ToastFn } from '../../../types';
 import { InputField } from '../InputField';
 
+interface SupplyPrice {
+  price: number;
+  volume: number;
+}
 
 interface ProfileResponse {
   isCoolFarmer: boolean;
@@ -14,20 +18,14 @@ interface ProfileResponse {
   level: number;
   soldCount: number;
   balance: number;
-  prices: {
-    purchase: { basePrice: number; advPrice: number };
-    sale: { basePrice: number; advPrice: number };
-    yogurtMl: number;
+  yogurtMl: number;
   sunflowerOilMl: number;
   saladsEaten: number;
   isFatFarmer: boolean;
   prices: {
     purchase: { basePrice: number; advPrice: number };
     sale: { basePrice: number; advPrice: number };
-    supplies?: {
-      yogurt: { price: number; volume: number };
-      sunflowerOil: { price: number; volume: number };
-    };
+    supplies?: { yogurt: SupplyPrice; sunflowerOil: SupplyPrice };
   };
 }
 
@@ -43,20 +41,28 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   const [isCoolFarmer, setIsCoolFarmer] = React.useState(false);
   const [form, setForm] = React.useState<ProfileForm>({});
   const [errors, setErrors] = React.useState<ProfileErrors>({});
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const loadProfile = React.useCallback(async () => {
-    const { data } = await api.get<ProfileResponse>('/profile');
-    setProfile(data);
-    setIsCoolFarmer(Boolean(data.isCoolFarmer));
+    try {
+      setLoadError(null);
+      const { data } = await api.get<ProfileResponse>('/profile');
+      setProfile(data);
+      setIsCoolFarmer(Boolean(data.isCoolFarmer));
 
-    if (data.isCoolFarmer) {
-      setForm({ nickname: data.nickname ?? '', passport: data.passport ?? '' });
-    } else {
-      setForm({
-        firstName: data.firstName ?? '',
-        lastName: data.lastName ?? '',
-        middleName: data.middleName ?? ''
-      });
+      if (data.isCoolFarmer) {
+        setForm({ nickname: data.nickname ?? '', passport: data.passport ?? '' });
+      } else {
+        setForm({
+          firstName: data.firstName ?? '',
+          lastName: data.lastName ?? '',
+          middleName: data.middleName ?? ''
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load profile', error);
+      setProfile(null);
+      setLoadError('Не удалось загрузить профиль');
     }
   }, []);
 
@@ -82,8 +88,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         nextErrors.passport = 'Не заполнено поле';
       } else if (!/^\d{6}$/.test(form.passport)) {
         nextErrors.passport = 'Ошибка валидации';
-      }
-    } else {
+@@ -87,108 +93,133 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
       const ru = /^[А-ЯЁа-яё\-\s]{2,40}$/;
       for (const field of ['firstName', 'lastName', 'middleName']) {
         const value = form[field] ?? '';
@@ -109,6 +114,7 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
       onToast('Данные сохранены');
       loadProfile();
     } catch (error) {
+      console.error('Failed to save profile', error);
       onToast('Не удалось сохранить данные');
     }
   };
@@ -124,17 +130,19 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
   };
 
   if (!profile) {
-    return <div className="card">Загрузка...</div>;
+    return <div className="card">{loadError ?? 'Загрузка...'}</div>;
   }
+
+  const supplies = profile.prices.supplies;
 
   return (
     <div className="grid">
       <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
         <div className="badge">Уровень: {profile.level}</div>
         <div className="badge">Продано: {profile.soldCount}</div>
-        <div className="badge">
-          Баланс: <span className="money">{profile.balance} ₽</span>
-        </div>
+        <div className="badge">Баланс: <span className="money">{profile.balance} ₽</span></div>
+        <div className="badge">Салатов съедено: {profile.saladsEaten}</div>
+        <div className="badge">Фермер {profile.isFatFarmer ? 'сыт' : 'в форме'}</div>
       </div>
 
       <div className="card">
@@ -181,10 +189,32 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
           </div>
         )}
 
-        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
           <button className="btn" onClick={save}>
             Сохранить
           </button>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Цены и запасы</h3>
+        <div className="grid grid-2">
+          <div className="badge">Покупка: {profile.prices.purchase.basePrice} ₽</div>
+          <div className="badge">Покупка (ур.2): {profile.prices.purchase.advPrice} ₽</div>
+          <div className="badge">Продажа: {profile.prices.sale.basePrice} ₽</div>
+          <div className="badge">Продажа (ур.2): {profile.prices.sale.advPrice} ₽</div>
+        </div>
+        {supplies ? (
+          <div className="grid" style={{ marginTop: 12 }}>
+            <div className="badge">Йогурт: {supplies.yogurt.price} ₽ за {supplies.yogurt.volume} мл</div>
+            <div className="badge">
+              Подсолнечное масло: {supplies.sunflowerOil.price} ₽ за {supplies.sunflowerOil.volume} мл
+            </div>
+          </div>
+        ) : null}
+        <div className="grid" style={{ marginTop: 12 }}>
+          <div className="badge">Йогурта на складе: {profile.yogurtMl} мл</div>
+          <div className="badge">Масла на складе: {profile.sunflowerOilMl} мл</div>
         </div>
       </div>
     </div>

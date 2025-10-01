@@ -34,76 +34,22 @@ export function AuthPage({ onLoginSuccess, onRegisterSuccess }: AuthPageProps) {
               }}
               onSwitchToLogin={() => setMode('login')}
             />
-@@ -51,55 +51,55 @@ function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
-    setEmailError(null);
-    setPasswordError(null);
-
-    if (!email) {
-      setEmailError('Не заполнено поле');
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError('Ошибка валидации');
-      return false;
-    }
-    if (!password) {
-      setPasswordError('Не заполнено поле');
-      return false;
-    }
-
-    return true;
-  };
-
-  const submit = async () => {
-    if (!validate()) {
-      return;
-    }
-
-    try {
-      const { data } = await api.post<AuthTokens>('/auth/login', { email, password });
-      if (!data?.accessToken || !data?.refreshToken) {
-        throw new Error('Missing tokens');
-      }
-      onSuccess(data);
-    } catch (error) {
-      setPasswordError('Ошибка валидации');
-    }
-  };
-
-  return (
-    <div className="auth-content">
-      <h3>Авторизация</h3>
-      <div className="grid">
-        <InputField label="Email" value={email} onChange={setEmail} error={emailError} />
-        <InputField label="Пароль" type="password" value={password} onChange={setPassword} error={passwordError} />
-        <div className="auth-alt">
-          <span className="auth-question">Нет аккаунта?</span>
-          <button type="button" className="auth-secondary" onClick={onSwitchToRegister}>
-            Зарегистрироваться
-          </button>
+          )}
         </div>
-      </div>
-      <div className="auth-controls auth-single">
-        <button className="btn" onClick={submit}>
-          Войти
-        </button>
       </div>
     </div>
   );
 }
 
-function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
+function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [confirm, setConfirm] = React.useState('');
   const [emailError, setEmailError] = React.useState<string | null>(null);
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
-  const [confirmError, setConfirmError] = React.useState<string | null>(null);
 
   const validate = () => {
     setEmailError(null);
     setPasswordError(null);
-    setConfirmError(null);
 
     if (!email) {
       setEmailError('Не заполнено поле');

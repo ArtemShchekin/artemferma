@@ -14,10 +14,7 @@ import {
   SeedType
 } from '../../constants/seeds';
 
-interface PricesResponse {
-  purchase: { basePrice: number; advPrice: number };
-  sale: { basePrice: number; advPrice: number };
-  interface SupplyPrice {
+interface SupplyPrice {
   price: number;
   volume: number;
 }
