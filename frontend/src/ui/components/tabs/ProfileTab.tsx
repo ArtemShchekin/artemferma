@@ -1,7 +1,12 @@
 import React from 'react';
 import { api } from '../../../api';
 import { ToastFn } from '../../../types';
-import { SEED_NAMES } from '../../constants/seeds';
+import {
+  ADVANCED_SEED_TYPES,
+  BASE_SEED_TYPES,
+  SEED_NAMES,
+  SeedType
+} from '../../constants/seeds';
 import { InputField } from '../InputField';
 
 interface ProfileResponse {
@@ -40,18 +45,12 @@ function buildFullName(profile: ProfileResponse) {
   return [profile.lastName, profile.firstName, profile.middleName].filter(Boolean).join(' ');
 }
 
-function collectVegetableBadges(kitchen: KitchenSnapshot | null) {
-  const entries = Object.entries(kitchen?.vegetables ?? {})
-    .filter(([key]) => key in SEED_NAMES)
-    .sort(([a], [b]) =>
-      SEED_NAMES[a as keyof typeof SEED_NAMES].localeCompare(
-        SEED_NAMES[b as keyof typeof SEED_NAMES]
-      )
-    );
+const VEGETABLE_TYPES: SeedType[] = [...BASE_SEED_TYPES, ...ADVANCED_SEED_TYPES];
 
-  return entries.map(([type, count]) => ({
+function collectVegetableBadges(kitchen: KitchenSnapshot | null) {
+  return VEGETABLE_TYPES.map((type) => ({
     key: type,
-    label: `${SEED_NAMES[type as keyof typeof SEED_NAMES]} на складе: ${count} шт.`
+    label: `${SEED_NAMES[type]} на складе: ${kitchen?.vegetables?.[type] ?? 0} шт.`
   }));
 }
 
@@ -235,15 +234,11 @@ export function ProfileTab({ onToast }: ProfileTabProps) {
         <div className="grid" style={{ marginTop: 12 }}>
           <div className="badge">Йогурта на складе: {yogurtLeft} мл</div>
           <div className="badge">Масла на складе: {oilLeft} мл</div>
-          {vegetableBadges.length > 0 ? (
-            vegetableBadges.map((badge) => (
-              <div key={badge.key} className="badge">
-                {badge.label}
-              </div>
-            ))
-          ) : (
-            <div className="badge">Данные по овощам недоступны</div>
-          )}
+          {vegetableBadges.map((badge) => (
+            <div key={badge.key} className="badge">
+              {badge.label}
+            </div>
+          ))}
         </div>
       </div>
     </div>
