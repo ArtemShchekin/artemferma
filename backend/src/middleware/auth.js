@@ -1,7 +1,9 @@
 import { UnauthorizedError } from '../utils/errors.js';
 import { verifyAccessToken } from '../utils/jwt.js';
+import { asyncHandler } from '../utils/async-handler.js';
+import { getTokenPayloadForUser } from '../services/token-version.js';
 
-export function authenticate(req, res, next) {
+export const authenticate = asyncHandler(async (req, res, next) => {
   if (req.method === 'OPTIONS') {
     return next();
   }
@@ -18,10 +20,18 @@ export function authenticate(req, res, next) {
     return next(new UnauthorizedError());
   }
 
+  let payload;
   try {
-    req.user = verifyAccessToken(token);
-    return next();
+    payload = verifyAccessToken(token);
   } catch (error) {
     return next(new UnauthorizedError());
   }
-}
+
+  const current = await getTokenPayloadForUser(payload.id);
+  if (current.tokenVersion !== payload.tokenVersion) {
+    return next(new UnauthorizedError());
+  }
+
+  req.user = current;
+  return next();
+});

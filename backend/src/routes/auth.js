@@ -5,9 +5,14 @@ import { asyncHandler } from '../utils/async-handler.js';
 import { assertValid } from '../utils/validation.js';
 import { RequiredFieldError, UnauthorizedError, ValidationError } from '../utils/errors.js';
 import { queryOne, withTransaction } from '../db/pool.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import { verifyRefreshToken } from '../utils/jwt.js';
 import { logApi } from '../logging/index.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
+import {
+  buildTokenPairFromPayload,
+  getTokenPayloadForUser,
+  rotateTokenVersion
+} from '../services/token-version.js';
 
 const router = Router();
 
@@ -15,11 +20,6 @@ const emailValidator = body('email').isEmail().withMessage('Ошибка вал�
 const passwordValidator = body('password')
   .isLength({ min: 6, max: 20 }).withMessage('Ошибка валидации')
   .matches(/^(?=.*\d)[A-Za-z\d]{6,20}$/).withMessage('Ошибка валидации');
-
-const buildTokenPair = (payload) => ({
-  accessToken: signAccessToken(payload),
-  refreshToken: signRefreshToken(payload)
-});
 
 router.post(
   '/register',
@@ -50,7 +50,8 @@ router.post(
 
       return { userId };
     });
-    const tokens = buildTokenPair({ id: userId, email });
+    const payload = await rotateTokenVersion(userId);
+    const tokens = buildTokenPairFromPayload(payload);    
     const response = {
       ...tokens,
       message: 'Регистрация произошла успешно'
@@ -89,7 +90,8 @@ router.post(
       throw new ValidationError();
     }
 
-    const tokens = buildTokenPair(user);
+    const payload = await rotateTokenVersion(user.id);
+    const tokens = buildTokenPairFromPayload(payload);    
     const response = { ...tokens };
     res.json(response);
     logApi('User logged in', {
@@ -116,12 +118,13 @@ router.post(
       throw new UnauthorizedError();
     }
 
-    const user = await queryOne('SELECT id, email FROM users WHERE id = ?', [payload.id]);
-    if (!user) {
+    const user = await getTokenPayloadForUser(payload.id);
+    if (user.tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedError();
     }
 
-    const tokens = buildTokenPair(user);
+    const rotatedPayload = await rotateTokenVersion(user.id);
+    const tokens = buildTokenPairFromPayload(rotatedPayload);    
     const response = { ...tokens };
     res.json(response);
 

@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
-const buildPayload = (payload) => ({ id: payload.id, email: payload.email });
+const buildPayload = (payload) => ({
+  id: payload.id,
+  email: payload.email,
+  tokenVersion: payload.tokenVersion
+});
 
 export function signAccessToken(payload) {
   return jwt.sign(buildPayload(payload), config.jwtSecret, {
