@@ -18,6 +18,17 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
   validateStatus: (status) => (status >= 200 && status < 300) || status === 304
 })
+const cachedGetResponses = new Map<string, unknown>()
+
+function getCacheKey(config?: AxiosRequestConfig) {
+  if (!config?.url) return null
+
+  const method = (config.method ?? 'get').toLowerCase()
+  if (method !== 'get') return null
+
+  const params = config.params ? JSON.stringify(config.params) : ''
+  return `${config.url}?${params}`
+}
 
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase()
@@ -87,6 +98,7 @@ export function clearAuthTokens({ emitEvent = true }: { emitEvent?: boolean } = 
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
   }
   setAuthHeader(null)
+  cachedGetResponses.clear()
   if (emitEvent) {
     emitTokens(null)
   }
@@ -125,8 +137,27 @@ async function refreshTokens(refreshToken: string): Promise<AuthTokens | null> {
 }
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
+  (response) => {
+    const cacheKey = getCacheKey(response.config)
+
+    if (cacheKey) {
+      if (response.status === 304) {
+        if (cachedGetResponses.has(cacheKey)) {
+          response.data = cachedGetResponses.get(cacheKey)
+        }
+      } else if (response.status >= 200 && response.status < 300) {
+        if (response.data === undefined || response.data === null) {
+          if (cachedGetResponses.has(cacheKey)) {
+            response.data = cachedGetResponses.get(cacheKey)
+          }
+        } else {
+          cachedGetResponses.set(cacheKey, response.data)
+        }
+      }
+    }
+
+    return response
+  },  async (error: AxiosError) => {
     const response = error.response
     const originalRequest = error.config as RetryableRequestConfig | undefined
 
