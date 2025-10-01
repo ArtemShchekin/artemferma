@@ -52,20 +52,14 @@ function formatUnit(value: number, unit: 'pcs' | 'ml') {
 }
 
 function hasEnoughIngredients(state: KitchenState | null, recipe: typeof FRUIT_RECIPE | typeof VEGETABLE_RECIPE) {
-  if (!state) {
-    return false;
-  }
+  if (!state) return false;
+
   for (const [type, amount] of Object.entries(recipe.veg)) {
-    if ((state.vegetables[type] ?? 0) < amount) {
-      return false;
-    }
+    if ((state.vegetables[type] ?? 0) < amount) return false;
   }
-  if (recipe.liquids.yogurtMl && state.yogurtMl < recipe.liquids.yogurtMl) {
-    return false;
-  }
-  if (recipe.liquids.sunflowerOilMl && state.sunflowerOilMl < recipe.liquids.sunflowerOilMl) {
-    return false;
-  }
+  if (recipe.liquids.yogurtMl && state.yogurtMl < recipe.liquids.yogurtMl) return false;
+  if (recipe.liquids.sunflowerOilMl && state.sunflowerOilMl < recipe.liquids.sunflowerOilMl) return false;
+
   return true;
 }
 
@@ -74,22 +68,14 @@ function isSelectionExact(
   recipe: typeof FRUIT_RECIPE | typeof VEGETABLE_RECIPE
 ) {
   for (const [type, amount] of Object.entries(recipe.veg)) {
-    if ((selection[type] ?? 0) !== amount) {
-      return false;
-    }
+    if ((selection[type] ?? 0) !== amount) return false;
   }
-  if (
-    recipe.liquids.yogurtMl &&
-    (selection.yogurtMl ?? 0) !== recipe.liquids.yogurtMl
-  ) {
-    return false;
-  }
+  if (recipe.liquids.yogurtMl && (selection.yogurtMl ?? 0) !== recipe.liquids.yogurtMl) return false;
   if (
     recipe.liquids.sunflowerOilMl &&
     (selection.sunflowerOilMl ?? 0) !== recipe.liquids.sunflowerOilMl
-  ) {
-    return false;
-  }
+  ) return false;
+
   return true;
 }
 
@@ -123,9 +109,7 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
   }, [load]);
 
   React.useEffect(() => {
-    if (!state) {
-      return;
-    }
+    if (!state) return;
 
     setActiveControl(null);
     setFruitSelection({
@@ -157,28 +141,20 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
   };
 
   const prepareSalad = async (recipeKey: 'fruit' | 'vegetable') => {
-    if (!state) {
-      return;
-    }
+    if (!state) return;
 
     const definition = recipeKey === 'fruit' ? FRUIT_RECIPE : VEGETABLE_RECIPE;
     const selection = recipeKey === 'fruit' ? fruitSelection : vegetableSelection;
 
     if (!hasEnoughIngredients(state, definition)) {
-      if (recipeKey === 'fruit') {
-        setFruitMessage('Недостаточно ингредиентов для фруктового салата');
-      } else {
-        setVegetableMessage('Недостаточно ингредиентов для овощного салата');
-      }
+      if (recipeKey === 'fruit') setFruitMessage('Недостаточно ингредиентов для фруктового салата');
+      else setVegetableMessage('Недостаточно ингредиентов для овощного салата');
       return;
     }
 
     if (!isSelectionExact(selection, definition)) {
-      if (recipeKey === 'fruit') {
-        setFruitMessage('Выстави ползунки на нужное количество');
-      } else {
-        setVegetableMessage('Выстави ползунки на нужное количество');
-      }
+      if (recipeKey === 'fruit') setFruitMessage('Выстави ползунки на нужное количество');
+      else setVegetableMessage('Выстави ползунки на нужное количество');
       return;
     }
 
@@ -188,11 +164,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
         ingredients: selection
       });
       setState(data);
-      if (recipeKey === 'fruit') {
-        setFruitMessage(null);
-      } else {
-        setVegetableMessage(null);
-      }
+      if (recipeKey === 'fruit') setFruitMessage(null);
+      else setVegetableMessage(null);
       onToast('Салат готов!');
     } catch (error) {
       console.error('Failed to prepare salad', error);
@@ -208,13 +181,15 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
     return <div className="card">{error ?? 'Не удалось загрузить кухню'}</div>;
   }
 
-
   return (
     <div className="grid">
+      {/* Фруктовый салат */}
       <div className="card kitchen-card">
         <h3>Фруктовый салат</h3>
         <p>Манго ×3 и йогурт ×1 литр.</p>
+
         <div className="kitchen-ingredients">
+          {/* Манго */}
           <button
             type="button"
             className="kitchen-ingredient"
@@ -224,7 +199,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             <div>
               <div className="kitchen-ingredient-name">{SEED_NAMES.mango}</div>
               <div className="kitchen-ingredient-info">
-                Выбрано {formatUnit(fruitSelection.mango, 'pcs')} из {FRUIT_RECIPE.veg.mango}. Доступно {formatUnit(state.vegetables.mango ?? 0, 'pcs')}.
+                Выбрано {formatUnit(fruitSelection.mango, 'pcs')} из {FRUIT_RECIPE.veg.mango}. Доступно{' '}
+                {formatUnit(state.vegetables.mango ?? 0, 'pcs')}.
               </div>
             </div>
           </button>
@@ -233,7 +209,15 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               type="range"
               className="kitchen-slider"
               min={0}
-@@ -230,59 +244,54 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
+              max={state.vegetables.mango ?? 0}
+              step={1}
+              value={fruitSelection.mango}
+              onChange={(e) => updateFruitSelection('mango', Number(e.target.value))}
+            />
+          ) : null}
+
+          {/* Йогурт */}
+          <button
             type="button"
             className="kitchen-ingredient"
             onClick={() => openControl('fruit.yogurt')}
@@ -255,20 +239,24 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               max={state.yogurtMl}
               step={50}
               value={fruitSelection.yogurtMl}
-              onChange={(event) => updateFruitSelection('yogurtMl', Number(event.target.value))}
+              onChange={(e) => updateFruitSelection('yogurtMl', Number(e.target.value))}
             />
           ) : null}
         </div>
+
         <button className="btn" onClick={() => prepareSalad('fruit')}>
           Приготовить
         </button>
         {fruitMessage ? <div className="kitchen-warning">{fruitMessage}</div> : null}
       </div>
 
+      {/* Овощной салат */}
       <div className="card kitchen-card">
         <h3>Овощной салат</h3>
         <p>Морковь ×3, капуста ×3, редис ×2 и подсолнечное масло ×100 мл.</p>
+
         <div className="kitchen-ingredients">
+          {/* Морковь */}
           <button
             type="button"
             className="kitchen-ingredient"
@@ -278,7 +266,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             <div>
               <div className="kitchen-ingredient-name">{SEED_NAMES.carrot}</div>
               <div className="kitchen-ingredient-info">
-                Выбрано {formatUnit(vegetableSelection.carrot, 'pcs')} из {VEGETABLE_RECIPE.veg.carrot}. Доступно {formatUnit(state.vegetables.carrot ?? 0, 'pcs')}.
+                Выбрано {formatUnit(vegetableSelection.carrot, 'pcs')} из {VEGETABLE_RECIPE.veg.carrot}. Доступно{' '}
+                {formatUnit(state.vegetables.carrot ?? 0, 'pcs')}.
               </div>
             </div>
           </button>
@@ -288,7 +277,67 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               className="kitchen-slider"
               min={0}
               max={state.vegetables.carrot ?? 0}
-@@ -345,54 +354,35 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
+              step={1}
+              value={vegetableSelection.carrot}
+              onChange={(e) => updateVegetableSelection('carrot', Number(e.target.value))}
+            />
+          ) : null}
+
+          {/* Капуста */}
+          <button
+            type="button"
+            className="kitchen-ingredient"
+            onClick={() => openControl('veg.cabbage')}
+          >
+            <img src={SEED_ICONS.cabbage} alt="Капуста" />
+            <div>
+              <div className="kitchen-ingredient-name">{SEED_NAMES.cabbage}</div>
+              <div className="kitchen-ingredient-info">
+                Выбрано {formatUnit(vegetableSelection.cabbage, 'pcs')} из {VEGETABLE_RECIPE.veg.cabbage}. Доступно{' '}
+                {formatUnit(state.vegetables.cabbage ?? 0, 'pcs')}.
+              </div>
+            </div>
+          </button>
+          {activeControl === 'veg.cabbage' ? (
+            <input
+              type="range"
+              className="kitchen-slider"
+              min={0}
+              max={state.vegetables.cabbage ?? 0}
+              step={1}
+              value={vegetableSelection.cabbage}
+              onChange={(e) => updateVegetableSelection('cabbage', Number(e.target.value))}
+            />
+          ) : null}
+
+          {/* Редис */}
+          <button
+            type="button"
+            className="kitchen-ingredient"
+            onClick={() => openControl('veg.radish')}
+          >
+            <img src={SEED_ICONS.radish} alt="Редис" />
+            <div>
+              <div className="kitchen-ingredient-name">{SEED_NAMES.radish}</div>
+              <div className="kitchen-ingredient-info">
+                Выбрано {formatUnit(vegetableSelection.radish, 'pcs')} из {VEGETABLE_RECIPE.veg.radish}. Доступно{' '}
+                {formatUnit(state.vegetables.radish ?? 0, 'pcs')}.
+              </div>
+            </div>
+          </button>
+          {activeControl === 'veg.radish' ? (
+            <input
+              type="range"
+              className="kitchen-slider"
+              min={0}
+              max={state.vegetables.radish ?? 0}
+              step={1}
+              value={vegetableSelection.radish}
+              onChange={(e) => updateVegetableSelection('radish', Number(e.target.value))}
+            />
+          ) : null}
+
+          {/* Масло */}
           <button
             type="button"
             className="kitchen-ingredient"
@@ -298,7 +347,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
             <div>
               <div className="kitchen-ingredient-name">Подсолнечное масло</div>
               <div className="kitchen-ingredient-info">
-                Выбрано {formatUnit(vegetableSelection.sunflowerOilMl, 'ml')} из {formatUnit(VEGETABLE_RECIPE.liquids.sunflowerOilMl, 'ml')}. Доступно {formatUnit(state.sunflowerOilMl, 'ml')}.
+                Выбрано {formatUnit(vegetableSelection.sunflowerOilMl, 'ml')} из {formatUnit(VEGETABLE_RECIPE.liquids.sunflowerOilMl, 'ml')}. Доступно{' '}
+                {formatUnit(state.sunflowerOilMl, 'ml')}.
               </div>
             </div>
           </button>
@@ -310,10 +360,11 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
               max={state.sunflowerOilMl}
               step={10}
               value={vegetableSelection.sunflowerOilMl}
-              onChange={(event) => updateVegetableSelection('sunflowerOilMl', Number(event.target.value))}
+              onChange={(e) => updateVegetableSelection('sunflowerOilMl', Number(e.target.value))}
             />
           ) : null}
         </div>
+
         <button className="btn" onClick={() => prepareSalad('vegetable')}>
           Приготовить
         </button>
