@@ -87,6 +87,8 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [fruitMessage, setFruitMessage] = React.useState<string | null>(null);
+  const [vegetableMessage, setVegetableMessage] = React.useState<string | null>(null);
+
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -167,7 +169,7 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
         recipe: recipeKey,
         ingredients: selection
       });
-      setState(data);
+      const nextState = data ?? null;
       if (recipeKey === 'fruit') setFruitMessage(null);
       else setVegetableMessage(null);
       onToast('Салат готов!');
