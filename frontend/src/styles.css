@@ -14,7 +14,7 @@ body{margin:0;background:#f7f2ef;font-family:FarmHand,system-ui;}
 }
 .header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(255,255,255,.7);backdrop-filter:saturate(1.2) blur(4px);}
 .logo{width:40px;height:40px;border-radius:50%;background:var(--yellow);box-shadow:0 2px 6px rgba(0,0,0,.2);display:grid;place-items:center;font-weight:700;}
-.tabs{display:flex;gap:8px;padding:10px 20px;}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;padding:10px 20px;}
 .tab{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--yellow);border:2px solid var(--brown);cursor:pointer;box-shadow:0 3px 0 var(--brown);}
 .tab img{width:18px;height:18px;display:block}
 .tab.active{background:#fff;}
