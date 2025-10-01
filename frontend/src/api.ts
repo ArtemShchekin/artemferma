@@ -197,12 +197,22 @@ export function initializeAuthTokens(): AuthTokens | null {
     return null
   }
   const stored = parseTokens(window.localStorage.getItem(AUTH_STORAGE_KEY))
+  
+  if (!stored) {
+    currentTokens = null
+    setAuthHeader(null)
+    return null
+  }
+
+  currentTokens = { ...stored }
+  setAuthHeader(stored.accessToken)
+
   if (window.localStorage.getItem('token')) {
     window.localStorage.removeItem('token')
-    return { ...stored }
   }
-  return null
-}
+
+  return { ...stored }
+ }
 
 function emitTokens(tokens: AuthTokens | null) {
   if (!isBrowser) return
