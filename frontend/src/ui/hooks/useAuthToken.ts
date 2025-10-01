@@ -4,8 +4,13 @@ import { setToken as applyTokenToClient } from '../../api';
 const STORAGE_KEY = 'token';
 
 export function useAuthToken() {
-  const [token, setTokenState] = React.useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
-
+  const [token, setTokenState] = React.useState<string | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      applyTokenToClient(saved);
+    }
+    return saved;
+  });
   React.useEffect(() => {
     applyTokenToClient(token);
   }, [token]);
