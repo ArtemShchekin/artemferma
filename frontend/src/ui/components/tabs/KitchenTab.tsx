@@ -94,11 +94,12 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
     setLoading(true);
     try {
       const { data } = await api.get<KitchenState>('/kitchen');
-      setState(data);
-      if (!nextState) {
-        throw new Error('Kitchen payload is empty');
+
+     if (!data || typeof data !== 'object') {
+      throw new Error('Kitchen payload is empty');
       }
-      setState(nextState);
+
+      setState(data);
       setError(null);
     } catch (loadError) {
       console.error('Failed to load kitchen', loadError);
@@ -169,10 +170,11 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
         recipe: recipeKey,
         ingredients: selection
       });
-      const nextState = data ?? null;
-      if (recipeKey === 'fruit') setFruitMessage(null);
-      else setVegetableMessage(null);
-      onToast('Салат готов!');
+      setState(data);
+
+       if (recipeKey === 'fruit') setFruitMessage(null);
+       else setVegetableMessage(null);
+       onToast('Салат готов!');
     } catch (error) {
       console.error('Failed to prepare salad', error);
       onToast('Не удалось приготовить салат');
