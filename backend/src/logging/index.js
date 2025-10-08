@@ -136,7 +136,18 @@ async function sendToOpenSearch(body) {
     }
     const forceImmediate = Boolean(config.opensearch.immediateRefresh);
     const refresh = forceImmediate ? true : false;
+  codex/add-database-logging-for-sql-queries-qgv72f
+
     await osClient.index({ index: config.opensearch.index, body, refresh });
+    if (forceImmediate) {
+      try {
+        await osClient.indices.refresh({ index: config.opensearch.index });
+      } catch (refreshError) {
+        printToConsole('error', 'Failed to refresh OpenSearch index', {
+          error: refreshError.message
+        });
+      }
+    }
   } catch (error) {
     printToConsole('error', 'Failed to send log to OpenSearch', { error: error.message });
   }
@@ -186,7 +197,32 @@ function prepareApiPayload(extra = {}) {
 
 function logApiStage(stage, message, extra = {}) {
   const payload = prepareApiPayload({ stage, ...extra });
+ codex/add-database-logging-for-sql-queries-qgv72f
   return logAndSend('info', message, payload);
+}
+
+export function logApiRequest(message, extra = {}) {
+  return logApiStage('request', message, extra);
+}
+
+export function logApiResponse(message, extra = {}) {
+  return logApiStage('response', message, extra);
+}
+
+export function logApiError(message, extra = {}) {
+  return logApiStage('error', message, extra);
+}
+
+export function logHttpEvent(eventName, extra) {
+  const payload = {
+    event: 'http_event',
+    'event.eventname': eventName,
+    ...extra
+  };
+  printToConsole('info', 'http_event', payload);
+  const body = baseDocument('info', 'http_event', payload);
+
+  return sendToOpenSearch(body);
 }
 
 export function logApiRequest(message, extra = {}) {
