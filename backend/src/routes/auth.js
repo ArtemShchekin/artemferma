@@ -6,7 +6,7 @@ import { assertValid } from '../utils/validation.js';
 import { RequiredFieldError, UnauthorizedError, ValidationError } from '../utils/errors.js';
 import { queryOne, withTransaction } from '../db/pool.js';
 import { verifyRefreshToken } from '../utils/jwt.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 import {
   buildTokenPairFromPayload,
@@ -31,6 +31,13 @@ router.post(
     if (email === '' || password === '') {
       throw new RequiredFieldError();
     }
+
+    logApiRequest('User registered', {
+      event: 'auth.register',
+      method: 'POST',
+      path: '/api/auth/register',
+      email
+    });
 
     const { userId } = await withTransaction(async (connection) => {
       const [existing] = await connection.query('SELECT id FROM users WHERE email = ? FOR UPDATE', [email]);
@@ -58,7 +65,7 @@ router.post(
     };
     res.json(response);
 
-    logApi('User registered', {
+    logApiResponse('User registered', {
       event: 'auth.register',
       method: 'POST',
       path: '/api/auth/register',
@@ -80,6 +87,13 @@ router.post(
       throw new RequiredFieldError();
     }
 
+    logApiRequest('User logged in', {
+      event: 'auth.login',
+      method: 'POST',
+      path: '/api/auth/login',
+      email
+    });
+
     const user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) {
       throw new ValidationError();
@@ -94,11 +108,12 @@ router.post(
     const tokens = buildTokenPairFromPayload(payload);    
     const response = { ...tokens };
     res.json(response);
-    logApi('User logged in', {
+    logApiResponse('User logged in', {
       event: 'auth.login',
       method: 'POST',
       path: '/api/auth/login',
       userId: user.id,
+      email,
       response
     });
   })
@@ -118,6 +133,13 @@ router.post(
       throw new UnauthorizedError();
     }
 
+    logApiRequest('Token refreshed', {
+      event: 'auth.refresh',
+      method: 'POST',
+      path: '/api/auth/refresh',
+      userId: payload.id
+    });
+
     const user = await getTokenPayloadForUser(payload.id);
     if (user.tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedError();
@@ -128,7 +150,7 @@ router.post(
     const response = { ...tokens };
     res.json(response);
 
-    logApi('Token refreshed', {
+    logApiResponse('Token refreshed', {
       event: 'auth.refresh',
       method: 'POST',
       path: '/api/auth/refresh',

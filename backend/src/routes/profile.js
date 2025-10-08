@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
 import { NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { ensureProfileInitialized, ensureProfileWithConnection } from '../services/user-setup.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 import config from '../config/index.js';
 import { redactProfilePayload } from '../utils/redact.js';
 
@@ -84,11 +84,18 @@ const router = Router();
 router.get(
   '/',
   asyncHandler(async (req, res) => {
+    logApiRequest('Profile requested', {
+      event: 'profile.get',
+      method: 'GET',
+      path: '/api/profile',
+      userId: req.user.id
+    });
+
     const profile = await ensureProfileInitialized(req.user.id);
     const response = mapProfileRow(profile);
 
     res.json(response);
-    logApi('Profile requested', {
+    logApiResponse('Profile requested', {
       event: 'profile.get',
       method: 'GET',
       path: '/api/profile',
@@ -104,6 +111,13 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const { id: idParam } = req.params;
+    logApiRequest('Profile requested by id', {
+      event: 'profile.getById',
+      method: 'GET',
+      path: `/api/profile/${idParam ?? ''}`,
+      userId: req.user.id,
+      requestedUserId: idParam ?? null
+    });
     const userId = Number(idParam);
 
     if (!Number.isInteger(userId) || userId <= 0) {
@@ -123,7 +137,7 @@ router.get(
 
     const response = mapProfileRow(profile);
     res.json(response);
-    logApi('Profile requested by id', {
+    logApiResponse('Profile requested by id', {
       event: 'profile.getById',
       method: 'GET',
       path: `/api/profile/${userId}`,
@@ -152,6 +166,17 @@ router.put(
       nickname: nickname ?? null,
       passport: passport ?? null
     };
+
+    const redactedRequest = redactProfilePayload(requestPayload);
+    logApiRequest('Profile updated', {
+      event: 'profile.update',
+      method: 'PUT',
+      path: '/api/profile',
+      userId: req.user.id,
+      isCoolFarmer,
+      mode: isCoolFarmer ? 'cool' : 'regular',
+      request: redactedRequest
+    });
 
     if (isCoolFarmer) {
       if (!nickname) {
@@ -203,9 +228,8 @@ router.put(
     const [[updatedProfile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
     const response = mapProfileRow(updatedProfile);
     res.json(response);
-    const redactedRequest = redactProfilePayload(requestPayload);
     const redactedResponse = redactProfilePayload(response);
-    logApi('Profile updated', {
+    logApiResponse('Profile updated', {
       event: 'profile.update',
       method: 'PUT',
       path: '/api/profile',

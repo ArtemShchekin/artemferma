@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
 import { ensureProfileInitialized, ensureProfileWithConnection } from '../services/user-setup.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 
 const router = Router();
@@ -74,9 +74,16 @@ async function loadKitchenState(userId) {
 router.get(
   '/',
   asyncHandler(async (req, res) => {
+    logApiRequest('Kitchen state requested', {
+      event: 'kitchen.get',
+      method: 'GET',
+      path: '/api/kitchen',
+      userId: req.user.id
+    });
+
     const state = await loadKitchenState(req.user.id);
     res.json(state);
-    logApi('Kitchen state requested', {
+    logApiResponse('Kitchen state requested', {
       event: 'kitchen.get',
       method: 'GET',
       path: '/api/kitchen',
@@ -90,6 +97,14 @@ router.post(
   '/salads',
   asyncHandler(async (req, res) => {
     const { recipe, ingredients } = req.body || {};
+    logApiRequest('Salad prepared', {
+      event: 'kitchen.prepareSalad',
+      method: 'POST',
+      path: '/api/kitchen/salads',
+      userId: req.user.id,
+      recipe: recipe ?? null,
+      ingredients: ingredients ?? null
+    });
     if (!recipe) {
       throw new RequiredFieldError();
     }
@@ -208,7 +223,7 @@ router.post(
     });
 
     res.json(state);
-    logApi('Salad prepared', {
+    logApiResponse('Salad prepared', {
       event: 'kitchen.prepareSalad',
       method: 'POST',
       path: '/api/kitchen/salads',
