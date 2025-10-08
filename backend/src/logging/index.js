@@ -134,8 +134,18 @@ async function sendToOpenSearch(body) {
     if (!indexPrepared) {
       return;
     }
-    const refresh = config.opensearch.immediateRefresh ? true : 'wait_for';
+    const forceImmediate = Boolean(config.opensearch.immediateRefresh);
+    const refresh = forceImmediate ? 'wait_for' : false;
     await osClient.index({ index: config.opensearch.index, body, refresh });
+    if (forceImmediate) {
+      try {
+        await osClient.indices.refresh({ index: config.opensearch.index });
+      } catch (refreshError) {
+        printToConsole('error', 'Failed to refresh OpenSearch index', {
+          error: refreshError.message
+        });
+      }
+    }
   } catch (error) {
     printToConsole('error', 'Failed to send log to OpenSearch', { error: error.message });
   }
