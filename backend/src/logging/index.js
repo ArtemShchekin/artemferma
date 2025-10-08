@@ -135,6 +135,7 @@ async function sendToOpenSearch(body) {
       return;
     }
     const forceImmediate = Boolean(config.opensearch.immediateRefresh);
+    const refresh = forceImmediate ? true : false;
     const refresh = forceImmediate ? 'wait_for' : false;
     await osClient.index({ index: config.opensearch.index, body, refresh });
     if (forceImmediate) {
@@ -174,18 +175,7 @@ export function logError(message, extra) {
   return logAndSend('error', message, extra);
 }
 
-export function logHttpEvent(eventName, extra) {
-  const payload = {
-    event: 'http_event',
-    'event.eventname': eventName,
-    ...extra
-  };
-  printToConsole('info', 'http_event', payload);
-  const body = baseDocument('info', 'http_event', payload);
-  return sendToOpenSearch(body);
-}
-
-export function logApi(message, extra = {}) {
+function prepareApiPayload(extra = {}) {
   const payload = { event: 'api', ...extra };
   if (payload.request && typeof payload.request !== 'string') {
     try {
@@ -201,8 +191,36 @@ export function logApi(message, extra = {}) {
       payload.response = '[unserializable response]';
     }
   }
+  return payload;
+}
+
+function logApiStage(stage, message, extra = {}) {
+  const payload = prepareApiPayload({ stage, ...extra });
   printToConsole('info', message, payload);
   const body = baseDocument('info', message, payload);
+  return sendToOpenSearch(body);
+}
+
+export function logApiRequest(message, extra = {}) {
+  return logApiStage('request', message, extra);
+}
+
+export function logApiResponse(message, extra = {}) {
+  return logApiStage('response', message, extra);
+}
+
+export function logApiError(message, extra = {}) {
+  return logApiStage('error', message, extra);
+}
+
+export function logHttpEvent(eventName, extra) {
+  const payload = {
+    event: 'http_event',
+    'event.eventname': eventName,
+    ...extra
+  };
+  printToConsole('info', 'http_event', payload);
+  const body = baseDocument('info', 'http_event', payload);
   return sendToOpenSearch(body);
 }
 

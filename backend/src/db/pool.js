@@ -165,7 +165,7 @@ function instrumentQueryLike(target, methodName) {
         error: error.message,
         stack: error.stack
       };
-
+      logError('Database query error', errorPayload);
       logError('Database query error', errorPayload);
       logError('Database query failed', errorPayload);
 

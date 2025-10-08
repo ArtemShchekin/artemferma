@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 
 const router = Router();
@@ -10,6 +10,13 @@ const router = Router();
 router.get(
   '/',
   asyncHandler(async (req, res) => {
+    logApiRequest('Inventory requested', {
+      event: 'inventory.list',
+      method: 'GET',
+      path: '/api/inventory',
+      userId: req.user.id
+    });
+
     const pool = getPool();
     const [rows] = await pool.query(
       'SELECT id, kind, type, status, created_at FROM inventory WHERE user_id = ? ORDER BY id DESC',
@@ -22,7 +29,7 @@ router.get(
 
     const response = { seeds, vegRaw, vegWashed };
     res.json(response);
-    logApi('Inventory requested', {
+    logApiResponse('Inventory requested', {
       event: 'inventory.list',
       method: 'GET',
       path: '/api/inventory',
@@ -30,7 +37,7 @@ router.get(
       seeds: seeds.length,
       vegRaw: vegRaw.length,
       vegWashed: vegWashed.length,
-      response    
+      response
     });
   })
 );
@@ -39,6 +46,13 @@ router.patch(
   '/wash/:id',
   asyncHandler(async (req, res) => {
     const { id: paramId } = req.params;
+    logApiRequest('Inventory item washed', {
+      event: 'inventory.wash',
+      method: 'PATCH',
+      path: `/api/inventory/wash/${paramId ?? ''}`,
+      userId: req.user.id,
+      inventoryId: paramId ?? null
+    });
     if (paramId === undefined || paramId === null || paramId === '') {
       throw new RequiredFieldError();
     }
@@ -65,7 +79,7 @@ router.patch(
 
     const response = { ok: true };
     res.json(response);
-    logApi('Inventory item washed', {
+    logApiResponse('Inventory item washed', {
       event: 'inventory.wash',
       method: 'PATCH',
       path: `/api/inventory/wash/${id}`,

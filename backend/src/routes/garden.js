@@ -5,7 +5,7 @@ import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 
 const router = Router();
@@ -13,6 +13,13 @@ const router = Router();
 router.get(
   '/plots',
   asyncHandler(async (req, res) => {
+    logApiRequest('Garden plots requested', {
+      event: 'garden.plots',
+      method: 'GET',
+      path: '/api/garden/plots',
+      userId: req.user.id
+    });
+
     const plots = await ensurePlotsInitialized(req.user.id);
 
     const mapped = plots.map((plot) => ({
@@ -28,7 +35,7 @@ router.get(
       growthMinutes: config.garden.growthMinutes
     };
     res.json(response);
-    logApi('Garden plots requested', {
+    logApiResponse('Garden plots requested', {
       event: 'garden.plots',
       method: 'GET',
       path: '/api/garden/plots',
@@ -44,6 +51,14 @@ router.post(
   '/plant',
   asyncHandler(async (req, res) => {
     const { slot, inventoryId } = req.body || {};
+    logApiRequest('Garden seed planted', {
+      event: 'garden.plant',
+      method: 'POST',
+      path: '/api/garden/plant',
+      userId: req.user.id,
+      slot: slot ?? null,
+      inventoryId: inventoryId ?? null
+    });
     if (slot === undefined || slot === null || inventoryId === undefined || inventoryId === null || inventoryId === '') {
       throw new RequiredFieldError();
     }
@@ -87,7 +102,7 @@ router.post(
 
     const response = { ok: true };
     res.json(response);
-    logApi('Garden seed planted', {
+    logApiResponse('Garden seed planted', {
       event: 'garden.plant',
       method: 'POST',
       path: '/api/garden/plant',
@@ -104,6 +119,13 @@ router.post(
   '/harvest',
   asyncHandler(async (req, res) => {
     const { slot } = req.body || {};
+    logApiRequest('Garden harvest completed', {
+      event: 'garden.harvest',
+      method: 'POST',
+      path: '/api/garden/harvest',
+      userId: req.user.id,
+      slot: slot ?? null
+    });
     if (slot === undefined || slot === null || slot === '') {
       throw new RequiredFieldError();
     }
@@ -141,7 +163,7 @@ router.post(
 
     const response = { ok: true };
     res.json(response);
-    logApi('Garden harvest completed', {
+    logApiResponse('Garden harvest completed', {
       event: 'garden.harvest',
       method: 'POST',
       path: '/api/garden/harvest',

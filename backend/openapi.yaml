@@ -126,6 +126,10 @@ components:
           type: string
           nullable: true
           description: Обязательное поле для прохладного фермера.
+      description: |
+        Тело запроса содержит только изменяемые поля профиля.
+        В зависимости от значения `isCoolFarmer` указываются либо поля обычного фермера,
+        либо данные крутого фермера.
       oneOf:
         - required: [isCoolFarmer, nickname, passport]
           properties:
