@@ -1,3 +1,4 @@
+ codex/add-database-logging-for-sql-queries-6lmq8c
 import crypto from 'crypto';
 import { runWithRequestContext, updateRequestContext } from '../utils/request-context.js';
 
@@ -21,6 +22,7 @@ export function requestContext(req, res, next) {
 
   const context = {
     requestId: generateRequestId(),
+
     method: req.method,
     path: normalizedPath || originalUrl || '',
     userId: req.user?.id ?? null

@@ -155,6 +155,8 @@ function instrumentQueryLike(target, methodName) {
         successPayload.rowCount = rowCount;
       }
       logInfo('Database query response', successPayload);
+      codex/add-database-logging-for-sql-queries-6lmq8c
+
       return result;
     } catch (error) {
       const errorPayload = {
@@ -165,6 +167,8 @@ function instrumentQueryLike(target, methodName) {
         stack: error.stack
       };
       logError('Database query error', errorPayload);
+ codex/add-database-logging-for-sql-queries-6lmq8c
+
       throw error;
     }
   };
