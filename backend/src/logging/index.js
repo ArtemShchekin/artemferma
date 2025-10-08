@@ -136,7 +136,7 @@ async function sendToOpenSearch(body) {
     }
     const forceImmediate = Boolean(config.opensearch.immediateRefresh);
     const refresh = forceImmediate ? true : false;
-  codex/add-database-logging-for-sql-queries-qgv72f
+
 
     await osClient.index({ index: config.opensearch.index, body, refresh });
     if (forceImmediate) {
@@ -197,7 +197,7 @@ function prepareApiPayload(extra = {}) {
 
 function logApiStage(stage, message, extra = {}) {
   const payload = prepareApiPayload({ stage, ...extra });
- codex/add-database-logging-for-sql-queries-qgv72f
+
   return logAndSend('info', message, payload);
 }
 
