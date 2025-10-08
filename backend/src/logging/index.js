@@ -136,7 +136,7 @@ async function sendToOpenSearch(body) {
     }
     const forceImmediate = Boolean(config.opensearch.immediateRefresh);
     const refresh = forceImmediate ? true : false;
-    codex/add-database-logging-for-sql-queries-6lmq8c
+  codex/add-database-logging-for-sql-queries-qgv72f
 
     await osClient.index({ index: config.opensearch.index, body, refresh });
     if (forceImmediate) {
@@ -197,8 +197,31 @@ function prepareApiPayload(extra = {}) {
 
 function logApiStage(stage, message, extra = {}) {
   const payload = prepareApiPayload({ stage, ...extra });
-  printToConsole('info', message, payload);
-  const body = baseDocument('info', message, payload);
+ codex/add-database-logging-for-sql-queries-qgv72f
+  return logAndSend('info', message, payload);
+}
+
+export function logApiRequest(message, extra = {}) {
+  return logApiStage('request', message, extra);
+}
+
+export function logApiResponse(message, extra = {}) {
+  return logApiStage('response', message, extra);
+}
+
+export function logApiError(message, extra = {}) {
+  return logApiStage('error', message, extra);
+}
+
+export function logHttpEvent(eventName, extra) {
+  const payload = {
+    event: 'http_event',
+    'event.eventname': eventName,
+    ...extra
+  };
+  printToConsole('info', 'http_event', payload);
+  const body = baseDocument('info', 'http_event', payload);
+
   return sendToOpenSearch(body);
 }
 
@@ -231,4 +254,4 @@ export function logStartup(extra = {}) {
 
 export function logShutdown(reason, extra = {}) {
   return logInfo('Backend shutting down', { event: 'shutdown', reason, ...extra });
-  }
+}
