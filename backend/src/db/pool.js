@@ -155,6 +155,7 @@ function instrumentQueryLike(target, methodName) {
         successPayload.rowCount = rowCount;
       }
       logInfo('Database query response', successPayload);
+      logInfo('Database query executed', successPayload);
       return result;
     } catch (error) {
       const errorPayload = {
@@ -165,6 +166,9 @@ function instrumentQueryLike(target, methodName) {
         stack: error.stack
       };
       logError('Database query error', errorPayload);
+      logError('Database query error', errorPayload);
+      logError('Database query failed', errorPayload);
+
       throw error;
     }
   };
