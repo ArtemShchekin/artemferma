@@ -134,6 +134,12 @@ function instrumentQueryLike(target, methodName) {
   target[methodName] = async function instrumented(sql, params = []) {
     const started = Date.now();
     const basePayload = buildLogPayload(sql, params);
+    const requestPayload = {
+      ...basePayload,
+      stage: 'request'
+    };
+
+    logInfo('Database query request', requestPayload);
 
     try {
       const result = await original.call(this, sql, params);
@@ -142,21 +148,27 @@ function instrumentQueryLike(target, methodName) {
       const rowCount = computeRowCount(rows);
       const successPayload = {
         ...basePayload,
+        stage: 'response',
         durationMs
       };
       if (rowCount !== null) {
         successPayload.rowCount = rowCount;
       }
+      logInfo('Database query response', successPayload);
       logInfo('Database query executed', successPayload);
       return result;
     } catch (error) {
       const errorPayload = {
         ...basePayload,
+        stage: 'error',
         durationMs: Date.now() - started,
         error: error.message,
         stack: error.stack
       };
+
+      logError('Database query error', errorPayload);
       logError('Database query failed', errorPayload);
+
       throw error;
     }
   };
@@ -239,14 +251,15 @@ export async function ensureDatabaseConnection() {
     }
   }
 
-  throw lastError;}
+  throw lastError;
+}
 
 export async function withTransaction(handler, options = {}) {
   const instance = getPool();
   const connection = await instance.getConnection();
 
   try {
-     if (options.isolationLevel) {
+    if (options.isolationLevel) {
       await connection.query(`SET TRANSACTION ISOLATION LEVEL ${options.isolationLevel}`);
     }
     await connection.beginTransaction();

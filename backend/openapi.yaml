@@ -58,19 +58,83 @@ components:
         firstName: { type: string, nullable: true }
         lastName: { type: string, nullable: true }
         middleName: { type: string, nullable: true }
-        nickname: { type: string, nullable: true }
-        passport: { type: string, nullable: true }
-        level: { type: integer, minimum: 1, maximum: 2 }
-        soldCount: { type: integer }
-        balance: { type: integer }
-        yogurtMl: { type: integer, minimum: 0 }
-        sunflowerOilMl: { type: integer, minimum: 0 }
-        saladsEaten: { type: integer, minimum: 0 }
-        isFatFarmer: { type: boolean }
+        nickname:
+          type: string
+          nullable: true
+          description: "Доступно только для прохладных фермеров"
+        passport:
+          type: string
+          nullable: true
+          description: "Доступно только для прохладных фермеров"
+        level:
+          type: integer
+          minimum: 1
+          maximum: 2
+          readOnly: true
+        soldCount:
+          type: integer
+          readOnly: true
+        balance:
+          type: integer
+          readOnly: true
+        yogurtMl:
+          type: integer
+          minimum: 0
+          readOnly: true
+        sunflowerOilMl:
+          type: integer
+          minimum: 0
+          readOnly: true
+        saladsEaten:
+          type: integer
+          minimum: 0
+          readOnly: true
+        isFatFarmer:
+          type: boolean
+          readOnly: true
         prices:
           allOf:
             - $ref: '#/components/schemas/ShopPrices'
           readOnly: true
+    ProfileUpdateReq:
+      type: object
+      required: [isCoolFarmer]
+      properties:
+        isCoolFarmer:
+          type: boolean
+          description: |
+            Определяет режим обновления профиля.
+            Для прохладного фермера (true) требуется указать nickname и passport.
+            Для обычного (false) требуются firstName, lastName и middleName.
+        firstName:
+          type: string
+          nullable: true
+          description: Обязательное поле для обычного фермера.
+        lastName:
+          type: string
+          nullable: true
+          description: Обязательное поле для обычного фермера.
+        middleName:
+          type: string
+          nullable: true
+          description: Обязательное поле для обычного фермера.
+        nickname:
+          type: string
+          nullable: true
+          description: Обязательное поле для прохладного фермера.
+        passport:
+          type: string
+          nullable: true
+          description: Обязательное поле для прохладного фермера.
+      oneOf:
+        - required: [isCoolFarmer, nickname, passport]
+          properties:
+            isCoolFarmer:
+              const: true
+        - required: [isCoolFarmer, firstName, lastName, middleName]
+          properties:
+            isCoolFarmer:
+              const: false
     ShopPrices:
       type: object
       properties:
@@ -187,12 +251,12 @@ paths:
               schema: { $ref: '#/components/schemas/Profile' }
     put:
       security: [{ bearerAuth: [] }]
-      summary: Сохранить профиль
+      summary: Редактирование профиля
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Profile' }
+            schema: { $ref: '#/components/schemas/ProfileUpdateReq' }
       responses:
         '200':
           description: OK
