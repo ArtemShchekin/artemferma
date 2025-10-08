@@ -5,13 +5,20 @@ import config from '../config/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
-import { logApi } from '../logging/index.js';
+import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 const router = Router();
 
 router.get(
   '/prices',
   asyncHandler(async (req, res) => {
+    logApiRequest('Shop prices requested', {
+      event: 'shop.prices',
+      method: 'GET',
+      path: '/api/shop/prices',
+      userId: req.user.id
+    });
+
     const response = {
       purchase: {
         basePrice: config.prices.purchaseBase,
@@ -34,7 +41,7 @@ router.get(
     };
 
     res.json(response);
-    logApi('Shop prices requested', {
+    logApiResponse('Shop prices requested', {
       event: 'shop.prices',
       method: 'GET',
       path: '/api/shop/prices',
@@ -48,6 +55,13 @@ router.post(
   '/buy',
   asyncHandler(async (req, res) => {
     const { type } = req.body || {};
+    logApiRequest('Seed purchased', {
+      event: 'shop.buy',
+      method: 'POST',
+      path: '/api/shop/buy',
+      userId: req.user.id,
+      type: type ?? null
+    });
     if (!type) {
       throw new RequiredFieldError();
     }
@@ -79,7 +93,7 @@ router.post(
 
     const response = { ok: true };
     res.json(response);
-    logApi('Seed purchased', {
+    logApiResponse('Seed purchased', {
       event: 'shop.buy',
       method: 'POST',
       path: '/api/shop/buy',
@@ -95,6 +109,13 @@ router.post(
   '/buy-supply',
   asyncHandler(async (req, res) => {
     const { supply } = req.body || {};
+    logApiRequest('Supply purchased', {
+      event: 'shop.buySupply',
+      method: 'POST',
+      path: '/api/shop/buy-supply',
+      userId: req.user.id,
+      supply: supply ?? null
+    });
     if (!supply) {
       throw new RequiredFieldError();
     }
@@ -139,7 +160,7 @@ router.post(
 
     const response = { ok: true, price, volume };
     res.json(response);
-    logApi('Supply purchased', {
+    logApiResponse('Supply purchased', {
       event: 'shop.buySupply',
       method: 'POST',
       path: '/api/shop/buy-supply',
@@ -156,6 +177,13 @@ router.post(
   '/sell',
   asyncHandler(async (req, res) => {
     const { inventoryId } = req.body || {};
+    logApiRequest('Harvest sold', {
+      event: 'shop.sell',
+      method: 'POST',
+      path: '/api/shop/sell',
+      userId: req.user.id,
+      inventoryId: inventoryId ?? null
+    });
     if (inventoryId === undefined || inventoryId === null || inventoryId === '') {
       throw new RequiredFieldError();
     }
@@ -189,7 +217,7 @@ router.post(
 
     const response = { ok: true };
     res.json(response);
-    logApi('Harvest sold', {
+    logApiResponse('Harvest sold', {
       event: 'shop.sell',
       method: 'POST',
       path: '/api/shop/sell',
