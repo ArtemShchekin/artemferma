@@ -6,6 +6,7 @@ import routes from './routes/index.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { loadOpenApi } from './utils/openapi.js';
+import { requestContext } from './middleware/request-context.js';
 
 function buildFallbackSpec() {
   return {
@@ -73,6 +74,7 @@ export function createApp() {
     })
   );  
 
+  app.use(requestContext);
   app.use(requestLogger);
 
   setupSwagger(app);

@@ -2,6 +2,7 @@ import { UnauthorizedError } from '../utils/errors.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getTokenPayloadForUser } from '../services/token-version.js';
+import { updateRequestContext } from '../utils/request-context.js';
 
 export const authenticate = asyncHandler(async (req, res, next) => {
   if (req.method === 'OPTIONS') {
@@ -33,5 +34,6 @@ export const authenticate = asyncHandler(async (req, res, next) => {
   }
 
   req.user = current;
+  updateRequestContext({ userId: current.id });
   return next();
 });
