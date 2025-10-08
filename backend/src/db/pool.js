@@ -247,14 +247,15 @@ export async function ensureDatabaseConnection() {
     }
   }
 
-  throw lastError;}
+  throw lastError;
+}
 
 export async function withTransaction(handler, options = {}) {
   const instance = getPool();
   const connection = await instance.getConnection();
 
   try {
-     if (options.isolationLevel) {
+    if (options.isolationLevel) {
       await connection.query(`SET TRANSACTION ISOLATION LEVEL ${options.isolationLevel}`);
     }
     await connection.beginTransaction();
