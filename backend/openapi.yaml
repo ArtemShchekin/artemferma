@@ -61,11 +61,11 @@ components:
         nickname:
           type: string
           nullable: true
-          description: "Доступно только для прохладных фермеров"
+          description: "Доступно только для крутых фермеров"
         passport:
           type: string
           nullable: true
-          description: "Доступно только для прохладных фермеров"
+          description: "Доступно только для крутых фермеров"
         level:
           type: integer
           minimum: 1
