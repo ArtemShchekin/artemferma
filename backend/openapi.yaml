@@ -104,7 +104,7 @@ components:
           type: boolean
           description: |
             Определяет режим обновления профиля.
-            Для прохладного фермера (true) требуется указать nickname и passport.
+            Для крутого фермера (true) требуется указать nickname и passport.
             Для обычного (false) требуются firstName, lastName и middleName.
         firstName:
           type: string
@@ -121,16 +121,14 @@ components:
         nickname:
           type: string
           nullable: true
-          description: Обязательное поле для прохладного фермера.
+          description: Обязательное поле для крутого фермера.
         passport:
           type: string
           nullable: true
-          description: Обязательное поле для прохладного фермера.
+          description: Обязательное поле для крутого фермера.
       description: |
         Тело запроса содержит только изменяемые поля профиля.
-        В зависимости от значения `isCoolFarmer` указываются либо поля обычного фермера,
-        либо данные прохладного фермера
-        либо данные крутого фермера.
+        В зависимости от значения `isCoolFarmer` указываются либо поля обычного фермера, либо данные крутого фермера.
     ShopPrices:
       type: object
       properties:
