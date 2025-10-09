@@ -146,6 +146,7 @@ function instrumentQueryLike(target, methodName) {
       const durationMs = Date.now() - started;
       const [rows] = Array.isArray(result) ? result : [result];
       const rowCount = computeRowCount(rows);
+ codex/add-database-logging-for-sql-queries-4wtrbq
       const responseBase = { ...basePayload };
       delete responseBase.sql;
       delete responseBase.params;
@@ -158,6 +159,8 @@ function instrumentQueryLike(target, methodName) {
         successPayload.rowCount = rowCount;
       }
       logInfo('Database query response', successPayload);
+  codex/add-database-logging-for-sql-queries-4wtrbq
+
       return result;
     } catch (error) {
       const errorPayload = {
@@ -168,6 +171,8 @@ function instrumentQueryLike(target, methodName) {
         stack: error.stack
       };
       logError('Database query error', errorPayload);
+ codex/add-database-logging-for-sql-queries-4wtrbq
+
       throw error;
     }
   };
