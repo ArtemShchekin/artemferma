@@ -37,7 +37,7 @@ const config = {
   env: getString(process.env.NODE_ENV, 'development'),
   port: toInt(process.env.PORT, 3000),
   jwtSecret: getString(process.env.JWT_SECRET, 'devsecret'),
-    jwtAccessExpiresIn: getString(process.env.JWT_ACCESS_EXPIRES_IN, '15m'),
+  jwtAccessExpiresIn: getString(process.env.JWT_ACCESS_EXPIRES_IN, '15m'),
   jwtRefreshSecret: getString(process.env.JWT_REFRESH_SECRET, 'devrefreshsecret'),
   jwtRefreshExpiresIn: getString(process.env.JWT_REFRESH_EXPIRES_IN, '30d'),
   database: {
@@ -56,7 +56,7 @@ const config = {
     saleBase: toInt(process.env.SALE_BASE_PRICE, 4),
     saleAdv: toInt(process.env.SALE_ADV_PRICE, 10)
   },
-    supplies: {
+  supplies: {
     yogurt: {
       price: toInt(process.env.SUPPLY_YOGURT_PRICE, 25),
       volume: toInt(process.env.SUPPLY_YOGURT_VOLUME, 500)
@@ -79,7 +79,8 @@ const config = {
     rejectUnauthorized: toBool(process.env.OPENSEARCH_TLS_REJECT_UNAUTHORIZED, true),
     indexRetryAttempts: toInt(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
     indexRetryDelayMs: toInt(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000),
-    immediateRefresh: toBool(process.env.OPENSEARCH_IMMEDIATE_REFRESH, true)  }
+    immediateRefresh: toBool(process.env.OPENSEARCH_IMMEDIATE_REFRESH, true)
+  }
 };
 
 if (!config.opensearch.enabled) {
@@ -87,3 +88,4 @@ if (!config.opensearch.enabled) {
 }
 
 export default config;
+
