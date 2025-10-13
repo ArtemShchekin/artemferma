@@ -16,6 +16,7 @@ const DEFAULT_PROFILE = {
   passport: null,
   balance: 30,
   sold_count: 0,
+  level: 1,
   yogurt_ml: 0,
   sunflower_oil_ml: 0,
   salads_eaten: 0};
@@ -54,6 +55,7 @@ export function mapProfileRow(profileRow) {
   const source = profileRow ?? DEFAULT_PROFILE;
   const soldCount = toInt(source.sold_count, DEFAULT_PROFILE.sold_count);
   const balance = toInt(source.balance, DEFAULT_PROFILE.balance);
+  const level = toInt(source.level, DEFAULT_PROFILE.level);
   const yogurtMl = toInt(source.yogurt_ml, 0);
   const sunflowerOilMl = toInt(source.sunflower_oil_ml, 0);
   const saladsEaten = toInt(source.salads_eaten, 0);
@@ -67,7 +69,7 @@ export function mapProfileRow(profileRow) {
     passport: source.passport ?? null,
     soldCount,
     balance,
-    level: soldCount >= 50 ? 2 : 1,
+    level,
     yogurtMl,
     sunflowerOilMl,
     saladsEaten,
