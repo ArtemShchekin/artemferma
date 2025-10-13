@@ -52,12 +52,12 @@ export function MainLayout({ onLogout, onToast }: MainLayoutProps) {
             onClick={() => setActiveTab(tab.key)}
           >
             <img src={tab.icon} alt="" />
-            {tab.label}
+            <span className="tab-label">{tab.label}</span>
           </button>
         ))}
       </nav>
 
-      <main style={{ padding: 20 }}>
+      <main className="main">
         {activeTab === 'profile' && <ProfileTab onToast={onToast} />}
         {activeTab === 'shop' && <ShopTab onToast={onToast} />}
         {activeTab === 'garden' && <GardenTab onToast={onToast} />}
