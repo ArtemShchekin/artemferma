@@ -74,7 +74,7 @@ router.post(
     await withTransaction(async (connection) => {
       const profile = await ensureProfileWithConnection(connection, req.user.id);
 
-      const level = profile.sold_count >= 50 ? 2 : 1;
+      const level = Number.parseInt(profile.level, 10) || 1;
       if (isAdvancedSeed(type) && level < 2) {
         throw new ValidationError();
       }
@@ -210,7 +210,11 @@ router.post(
 
       await connection.query('DELETE FROM inventory WHERE id = ?', [id]);
       await connection.query(
-        'UPDATE profiles SET balance = balance + ?, sold_count = sold_count + 1 WHERE user_id = ?',
+        `UPDATE profiles
+         SET balance = balance + ?,
+             sold_count = sold_count + 1,
+             level = CASE WHEN sold_count + 1 >= 50 THEN 2 ELSE 1 END
+         WHERE user_id = ?`,
         [price, req.user.id]
       );
     });
