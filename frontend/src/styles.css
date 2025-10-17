@@ -35,6 +35,22 @@ body{margin:0;background:#f7f2ef;font-family:FarmHand,system-ui;}
 .modal{width:min(480px,95vw);}
 .input{display:flex;flex-direction:column;gap:4px;}
 .input input{padding:10px;border:2px solid var(--brown);border-radius:10px;}
+.localization-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px;box-sizing:border-box;}
+.localization-card{width:min(520px,95vw);display:grid;gap:16px;}
+.localization-header{display:flex;align-items:center;gap:12px;justify-content:space-between;}
+.localization-back{background:none;border:none;padding:0;color:var(--brown);cursor:pointer;font-size:14px;text-decoration:underline;}
+.localization-back:hover{text-decoration:none;}
+.localization-label{font-weight:700;color:var(--brown);}
+.localization-description{margin:0;color:#5d4037;}
+.localization-form{display:grid;gap:12px;}
+.localization-status{padding:10px 12px;border:2px dashed var(--brown);border-radius:12px;background:#fff6e5;color:#5d4037;font-weight:600;}
+.localization-hint{margin:0;color:#5d4037;font-size:14px;}
+.localization-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+.localization-link{width:100%;display:flex;align-items:center;gap:12px;border:none;background:#fff;border:2px solid var(--brown);border-radius:12px;padding:10px 14px;text-align:left;cursor:pointer;box-shadow:0 4px 0 var(--brown);}
+.localization-link:hover{background:var(--yellow);}
+.localization-id{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--yellow);font-weight:700;color:var(--brown);}
+.localization-text{font-weight:700;color:var(--brown);}
+.localization-actions{display:flex;justify-content:flex-end;}
 .err{color:var(--red);font-weight:700;}
 .slot{min-height:140px;background:#e6ffb0;border:2px dashed var(--brown);border-radius:12px;display:grid;place-items:center;}
 .shop-item{display:flex;justify-content:space-between;align-items:center;border:2px dashed var(--brown);border-radius:12px;padding:8px 12px;background:#fff;}
