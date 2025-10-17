@@ -17,23 +17,17 @@ function splitSqlStatements(sql) {
 
     if (char === "'" && !inDoubleQuote && !inBacktick) {
       const isEscaped = previousChar === "'";
-      if (!isEscaped) {
-        inSingleQuote = !inSingleQuote;
-      }
+      if (!isEscaped) inSingleQuote = !inSingleQuote;
     } else if (char === '"' && !inSingleQuote && !inBacktick) {
       const isEscaped = previousChar === '"';
-      if (!isEscaped) {
-        inDoubleQuote = !inDoubleQuote;
-      }
+      if (!isEscaped) inDoubleQuote = !inDoubleQuote;
     } else if (char === '`' && !inSingleQuote && !inDoubleQuote) {
       inBacktick = !inBacktick;
     }
 
     if (char === ';' && !inSingleQuote && !inDoubleQuote && !inBacktick) {
       const statement = current.trim();
-      if (statement.length > 0) {
-        statements.push(statement);
-      }
+      if (statement.length > 0) statements.push(statement);
       current = '';
     }
 
@@ -41,20 +35,42 @@ function splitSqlStatements(sql) {
   }
 
   const trailing = current.trim();
-  if (trailing.length > 0) {
-    statements.push(trailing);
-  }
-
+  if (trailing.length > 0) statements.push(trailing);
   return statements;
+}
+
+// --- НОВОЕ: классификация "безопасных" ошибок миграций ---
+function isIgnorableMigrationError(err, statement) {
+  const msg = (err?.message || '').toLowerCase();
+
+  // MySQL codes (для reference): 1060 dup field, 1061 dup key, 1091 can't drop
+  const code = err?.errno || err?.code;
+
+  // Дубликат колонки/индекса — миграция уже применена
+  if (
+    /duplicate column name/i.test(err?.message) ||
+    /already exists/i.test(err?.message) ||
+    code === 1060 || // ER_DUP_FIELDNAME
+    code === 1061    // ER_DUP_KEYNAME
+  ) return true;
+
+  // DROP несуществующего объекта — тоже ок
+  if (
+    /check that column\/key exists/i.test(err?.message) ||
+    code === 1091 // ER_CANT_DROP_FIELD_OR_KEY
+  ) return true;
+
+  // На всякий — если явный идемпотентный SQL, но сервер старой версии (не знает IF NOT EXISTS)
+  if (/add\s+column\s+if\s+not\s+exists/i.test(statement)) return true;
+  if (/create\s+table\s+if\s+not\s+exists/i.test(statement)) return true;
+
+  return false;
 }
 
 async function runMigrations() {
   await ensureDatabaseConnection();
   const migrationsDir = fileURLToPath(new URL('../migrations', import.meta.url));
-  const files = fs
-    .readdirSync(migrationsDir)
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
+  const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
   const pool = getPool();
 
@@ -63,12 +79,29 @@ async function runMigrations() {
     const statements = splitSqlStatements(sql);
 
     for (const statement of statements) {
-      await pool.query(statement);
+      const trimmed = statement.trim();
+      if (!trimmed) continue;
+
+      try {
+        await pool.query(trimmed);
+        logInfo('Migration statement OK', { event: 'db.migration_stmt_ok', file, sql: trimmed.slice(0, 140) });
+      } catch (err) {
+        if (isIgnorableMigrationError(err, trimmed)) {
+          logInfo('Migration statement skipped (idempotent)', {
+            event: 'db.migration_stmt_skip',
+            file,
+            reason: err.message,
+            sql: trimmed.slice(0, 140)
+          });
+          continue; // двигаемся дальше, не падаем
+        }
+        // Любая другая ошибка — валим, как и раньше
+        throw err;
+      }
     }
   }
 
   logInfo('Migrations applied', { event: 'db.migrations_applied', count: files.length });
-
 }
 
 runMigrations()
