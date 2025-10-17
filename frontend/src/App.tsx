@@ -1,13 +1,24 @@
 import React from 'react';
 import AuthPage from './ui/components/AuthPage';
 import MainLayout from './ui/components/MainLayout';
+import LocalizationPage from './ui/components/LocalizationPage';
 import { AuthTokens } from './api';
 import { useAuthToken } from './ui/hooks/useAuthToken';
 
 export default function App() {
   const { login, logout, isAuthenticated } = useAuthToken();
+  const [pathname, setPathname] = React.useState<string>(() => window.location.pathname);
   const [toast, setToast] = React.useState<string | null>(null);
   const toastTimeout = React.useRef<number | undefined>();
+
+  const navigate = React.useCallback((path: string, replace = false) => {
+    if (replace) {
+      window.history.replaceState(null, '', path);
+    } else {
+      window.history.pushState(null, '', path);
+    }
+    setPathname(path);
+  }, []);
 
   const showToast = React.useCallback((message: string) => {
     setToast(message);
@@ -21,23 +32,27 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    const desired = isAuthenticated ? '/' : '/auth';
-    if (window.location.pathname !== desired) {
-      window.history.replaceState(null, '', desired);
-    }
-  }, [isAuthenticated]);
-
-
-  React.useEffect(() => {
     const handlePop = () => {
-      const desired = isAuthenticated ? '/' : '/auth';
-      if (window.location.pathname !== desired) {
-        window.history.replaceState(null, '', desired);
-      }
+      setPathname(window.location.pathname);
     };
     window.addEventListener('popstate', handlePop);
     return () => window.removeEventListener('popstate', handlePop);
-  }, [isAuthenticated]);
+  }, []);
+
+  const isLocalizationRoute = React.useMemo(
+    () => pathname.startsWith('/localization'),
+    [pathname]
+  );
+
+  React.useEffect(() => {
+    if (isLocalizationRoute) {
+      return;
+    }
+    const desired = isAuthenticated ? '/' : '/auth';
+    if (pathname !== desired) {
+      navigate(desired, true);
+    }
+  }, [isAuthenticated, isLocalizationRoute, navigate, pathname]);
 
   React.useEffect(() => () => {
     if (toastTimeout.current) {
@@ -48,7 +63,7 @@ export default function App() {
   const handleLoginSuccess = (tokens: AuthTokens) => {
     showToast('Вход выполнен');
     login(tokens);
-    window.history.replaceState(null, '', '/');
+    navigate('/', true);
   };
 
   const handleRegisterSuccess = () => {
@@ -57,12 +72,14 @@ export default function App() {
 
   const handleLogout = () => {
     logout();
-    window.history.replaceState(null, '', '/auth');
+    navigate('/auth', true);
   };
 
   return (
     <div className="app">
-      {isAuthenticated ? (
+      {isLocalizationRoute ? (
+        <LocalizationPage path={pathname} onNavigate={navigate} />
+      ) : isAuthenticated ? (
         <MainLayout onLogout={handleLogout} onToast={showToast} />
       ) : (
         <AuthPage onLoginSuccess={handleLoginSuccess} onRegisterSuccess={handleRegisterSuccess} />
