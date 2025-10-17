@@ -5,7 +5,7 @@ interface LocalizationPageProps {
   onNavigate: (path: string, replace?: boolean) => void;
 }
 
-type ScenarioId = '1' | '2' | '3' | '4' | '5' | '6' | '7';
+type ScenarioId = '1' | '2' | '3' | '4' | '5' | '6';
 
 interface ScenarioMeta {
   title: string;
@@ -24,9 +24,9 @@ const SCENARIO_META: Record<ScenarioId, ScenarioMeta> = {
     description: 'Запрос отправляется, но сервер возвращает 400 из-за неверного тела.'
   },
   '3': {
-    title: 'Нет ответа от сервера',
+    title: 'Сервер отвечает 504',
     description:
-      'Запрос уходит корректно, но ответ не приходит вовремя (клиент прерывает ожидание; на сервере может случиться таймаут).'
+      'Запрос уходит корректно, но сервер слишком долго обрабатывает его и возвращает 504 ошибку.'
   },
   '4': {
     title: 'Неправильные данные в ответе',
@@ -39,14 +39,10 @@ const SCENARIO_META: Record<ScenarioId, ScenarioMeta> = {
   '6': {
     title: 'Ответ получен, но не показан',
     description: 'Запрос успешен, но результат не отображается пользователю.'
-  },
-  '7': {
-    title: 'Запрос уходит не на тот адрес',
-    description: 'Тело запроса корректно, но конечная точка указана с опечаткой и возвращает 404.'
   }
 };
 
-const SCENARIO_ORDER: ScenarioId[] = ['1', '2', '3', '4', '5', '6', '7'];
+const SCENARIO_ORDER: ScenarioId[] = ['1', '2', '3', '4', '5', '6'];
 
 export default function LocalizationPage({ path, onNavigate }: LocalizationPageProps) {
   const segment = React.useMemo(() => {
@@ -133,7 +129,7 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
 
     switch (id) {
       case '1': {
-        console.error('Демонстрационный сбой: запрос не отправлен из-за ошибки в клиентском коде.');
+        console.error('TypeError: Cannot read properties of undefined (reading "sendAuthorizationRequest")');
         setStatus('Запрос не был отправлен. Подробности смотрите в консоли.');
         break;
       }
@@ -148,16 +144,16 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           });
           const data = await response.json().catch(() => null);
           if (!response.ok) {
-            setStatus(
-              data?.details
-                ? `Сервер отклонил запрос: ${data.details}`
-                : 'Сервер вернул ошибку из-за неверного тела запроса.'
-            );
+            const message =
+              data?.message ?? data?.details ?? data?.error ?? 'Сервер вернул ошибку из-за неверного тела запроса.';
+            console.error(`HTTP ${response.status}: ${message}`);
+            setStatus(`Сервер отклонил запрос: ${message}`);
           } else {
             setStatus('Сервер принял запрос, хотя тело было составлено неверно.');
           }
         } catch (error) {
-          console.error('Ошибка при отправке запроса', error);
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Сетевая ошибка при отправке запроса: ${message}`);
           setStatus('Не удалось отправить запрос.');
         } finally {
           setLoading(false);
@@ -165,25 +161,26 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
         break;
       }
       case '3': {
-        setLoading(true);
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 7000);
         try {
-          await fetch(`${API_BASE}/localization/3`, {
+          setLoading(true);
+          const response = await fetch(`${API_BASE}/localization/3`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal
+            body: JSON.stringify(payload)
           });
-          setStatus('Ответ получен, но ожидался таймаут.');
-        } catch (error) {
-          if ((error as DOMException).name === 'AbortError') {
-            setStatus('Ответ не был получен вовремя: клиент прекратил ожидание.');
+          const data = await response.json().catch(() => null);
+          if (!response.ok) {
+            const message = data?.message ?? data?.error ?? 'Сервер вернул 504 ошибку.';
+            console.error(`HTTP ${response.status}: ${message}`);
+            setStatus(`Сервер вернул ${response.status}: ${message}`);
           } else {
-            setStatus('Произошла сетевая ошибка при ожидании ответа.');
+            setStatus('Ответ получен, но ожидалась 504 ошибка.');
           }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Сетевая ошибка: ${message}`);
+          setStatus('Произошла сетевая ошибка при ожидании ответа.');
         } finally {
-          window.clearTimeout(timeout);
           setLoading(false);
         }
         break;
@@ -199,11 +196,13 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           const data = await response.json();
           if ('login' in data && 'pass' in data) {
             setStatus('Получены поля login и pass вместо ожидаемых login и password.');
+            console.error('Некорректная структура ответа: получены поля login и pass.');
           } else {
             setStatus('Ответ соответствует ожиданиям.');
           }
         } catch (error) {
-          console.error('Ошибка при обработке ответа', error);
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Ошибка при обработке ответа: ${message}`);
           setStatus('Не удалось обработать ответ сервера.');
         } finally {
           setLoading(false);
@@ -219,10 +218,12 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
             body: JSON.stringify(payload)
           });
           if (!response.ok) {
-            console.error('Сервер вернул 500 без тела ответа.');
+            const message = response.statusText || 'Внутренняя ошибка сервера без тела ответа.';
+            console.error(`HTTP ${response.status}: ${message}`);
           }
         } catch (error) {
-          console.error('Ошибка при выполнении запроса', error);
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Ошибка при выполнении запроса: ${message}`);
         } finally {
           setLoading(false);
         }
@@ -240,35 +241,14 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
             await response.json();
             console.log('Ответ успешно получен, но не показан пользователю.');
           } else {
+            const message = response.statusText || `Ошибка ${response.status}`;
+            console.error(`HTTP ${response.status}: ${message}`);
             setStatus('Сервер вернул ошибку при обработке запроса.');
           }
         } catch (error) {
-          console.error('Ошибка при обработке успешного ответа', error);
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Ошибка при обработке успешного ответа: ${message}`);
           setStatus('Не удалось обработать ответ сервера.');
-        } finally {
-          setLoading(false);
-        }
-        break;
-      }
-      case '7': {
-        try {
-          setLoading(true);
-          // опечатка в пути — демонстрируем 404
-          const response = await fetch(`${API_BASE}/localizaiton/7`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (response.status === 404) {
-            setStatus('Запрос ушёл, но вернулся 404: конечная точка указана неверно.');
-          } else if (!response.ok) {
-            setStatus(`Получена ошибка: ${response.status}`);
-          } else {
-            setStatus('Ответ получен с неожиданного адреса.');
-          }
-        } catch (error) {
-          console.error('Ошибка при отправке запроса на неверный адрес', error);
-          setStatus('Произошла сетевая ошибка при обращении к конечной точке.');
         } finally {
           setLoading(false);
         }
@@ -323,10 +303,10 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           <label className="input">
             <span>Пароль</span>
             <input
-              type="password"
+              type="text"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••"
+              placeholder="demo@password"
             />
           </label>
           <button className="btn" type="submit" disabled={loading}>

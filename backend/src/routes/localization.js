@@ -17,17 +17,14 @@ router.post('/2', (_req, res) => {
   }, 2500);
 });
 
-// сценарий 3 — таймаут 120 секунд
-router.post('/3', (req, res) => {
-  const timer = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(504).json({ error: 'Таймаут обработки запроса' });
-    }
-  }, 120000);
-
-  req.on('close', () => {
-    clearTimeout(timer);
-  });
+// сценарий 3 — сервер возвращает 504 после ожидания
+router.post('/3', (_req, res) => {
+  setTimeout(() => {
+    res.status(504).json({
+      error: 'Gateway Timeout',
+      message: 'Сервер не успел обработать запрос и вернул 504 ошибку'
+    });
+  }, 8000);
 });
 
 // сценарий 4 — возврат логина и пароля
@@ -44,11 +41,6 @@ router.post('/5', (_req, res) => {
 
 router.post('/6', (_req, res) => {
   res.json({ success: true, tokens: { accessToken: 'demo-access', refreshToken: 'demo-refresh' } });
-});
-
-// сценарий 7 — успешный ответ
-router.post('/7', (_req, res) => {
-  res.json({ success: true, message: 'Корректная конечная точка /localization/7' });
 });
 
 export default router;
