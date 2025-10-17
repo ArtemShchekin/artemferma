@@ -7,8 +7,8 @@ import { useAuthToken } from './ui/hooks/useAuthToken';
 
 export default function App() {
   const { login, logout, isAuthenticated } = useAuthToken();
-  const [pathname, setPathname] = React.useState<string>(() => window.location.pathname);
   const [toast, setToast] = React.useState<string | null>(null);
+  const [pathname, setPathname] = React.useState<string>(() => window.location.pathname);
   const toastTimeout = React.useRef<number | undefined>();
 
   const navigate = React.useCallback((path: string, replace = false) => {
@@ -31,14 +31,6 @@ export default function App() {
     }, 2500);
   }, []);
 
-  React.useEffect(() => {
-    const handlePop = () => {
-      setPathname(window.location.pathname);
-    };
-    window.addEventListener('popstate', handlePop);
-    return () => window.removeEventListener('popstate', handlePop);
-  }, []);
-
   const isLocalizationRoute = React.useMemo(
     () => pathname.startsWith('/localization'),
     [pathname]
@@ -54,11 +46,32 @@ export default function App() {
     }
   }, [isAuthenticated, isLocalizationRoute, navigate, pathname]);
 
-  React.useEffect(() => () => {
-    if (toastTimeout.current) {
-      window.clearTimeout(toastTimeout.current);
-    }
-  }, []);
+  React.useEffect(() => {
+    const handlePop = () => {
+      const current = window.location.pathname;
+      if (current.startsWith('/localization')) {
+        setPathname(current);
+        return;
+      }
+      const desired = isAuthenticated ? '/' : '/auth';
+      if (current !== desired) {
+        window.history.replaceState(null, '', desired);
+      }
+      setPathname(desired);
+    };
+
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [isAuthenticated]);
+
+  React.useEffect(
+    () => () => {
+      if (toastTimeout.current) {
+        window.clearTimeout(toastTimeout.current);
+      }
+    },
+    []
+  );
 
   const handleLoginSuccess = (tokens: AuthTokens) => {
     showToast('Вход выполнен');
