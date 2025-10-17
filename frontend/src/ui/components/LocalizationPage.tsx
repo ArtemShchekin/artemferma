@@ -116,6 +116,11 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
   const prevScenario = currentIndex > 0 ? SCENARIO_ORDER[currentIndex - 1] : null;
   const nextScenario = currentIndex < SCENARIO_ORDER.length - 1 ? SCENARIO_ORDER[currentIndex + 1] : null;
 
+  React.useEffect(() => {
+    setStatus(null);
+    setLoading(false);
+  }, [id]);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setStatus(null);
@@ -198,9 +203,9 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           });
           const data = await response.json();
           if (data && typeof data === 'object') {
-            if ('login' in data && 'pass' in data && !('password' in data)) {
-              setStatus('Сервер вернул поле pass вместо password.');
-              console.error('Некорректная структура ответа: получены поля login и pass.');
+            if (data.success === true) {
+              setStatus('Сервер вернул success: true вместо ожидаемых полей login и password.');
+              console.error('Некорректная структура ответа: отсутствуют поля login и password.');
             } else if ('login' in data && 'password' in data) {
               setStatus('Ответ соответствует ожиданиям: получены login и password.');
             } else {
