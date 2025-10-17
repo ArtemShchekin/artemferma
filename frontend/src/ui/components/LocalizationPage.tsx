@@ -21,7 +21,7 @@ const SCENARIO_META: Record<ScenarioId, ScenarioMeta> = {
   },
   '2': {
     title: 'Некорректное тело запроса',
-    description: 'Запрос отправляется, но сервер возвращает 400 из-за неверного тела.'
+    description: 'Запрос уходит с полем pass вместо password, поэтому сервер возвращает 400.'
   },
   '3': {
     title: 'Сервер отвечает 504',
@@ -30,7 +30,7 @@ const SCENARIO_META: Record<ScenarioId, ScenarioMeta> = {
   },
   '4': {
     title: 'Неправильные данные в ответе',
-    description: 'Запрос успешен, но сервер возвращает неожидаемую структуру данных.'
+    description: 'Запрос успешен, но сервер возвращает поле pass вместо password.'
   },
   '5': {
     title: 'Внутренняя ошибка сервера без уведомления',
@@ -139,17 +139,20 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           const response = await fetch(`${API_BASE}/localization/2`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // намеренно неверные имена полей:
-            body: JSON.stringify({ username: login, secret: password })
+            // намеренно неверное имя поля пароля
+            body: JSON.stringify({ login, pass: password })
           });
           const data = await response.json().catch(() => null);
           if (!response.ok) {
             const message =
-              data?.message ?? data?.details ?? data?.error ?? 'Сервер вернул ошибку из-за неверного тела запроса.';
+              data?.message ??
+              data?.details ??
+              data?.error ??
+              'Ожидалось поле password, но сервер получил pass.';
             console.error(`HTTP ${response.status}: ${message}`);
             setStatus(`Сервер отклонил запрос: ${message}`);
           } else {
-            setStatus('Сервер принял запрос, хотя тело было составлено неверно.');
+            setStatus('Сервер принял запрос, несмотря на поле pass вместо password.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -194,11 +197,19 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
             body: JSON.stringify(payload)
           });
           const data = await response.json();
-          if ('login' in data && 'pass' in data) {
-            setStatus('Получены поля login и pass вместо ожидаемых login и password.');
-            console.error('Некорректная структура ответа: получены поля login и pass.');
+          if (data && typeof data === 'object') {
+            if ('login' in data && 'pass' in data && !('password' in data)) {
+              setStatus('Сервер вернул поле pass вместо password.');
+              console.error('Некорректная структура ответа: получены поля login и pass.');
+            } else if ('login' in data && 'password' in data) {
+              setStatus('Ответ соответствует ожиданиям: получены login и password.');
+            } else {
+              setStatus('Получена неожиданная структура ответа.');
+              console.error('Некорректная структура ответа: отсутствуют ожидаемые поля.');
+            }
           } else {
-            setStatus('Ответ соответствует ожиданиям.');
+            setStatus('Не удалось прочитать тело ответа.');
+            console.error('Некорректная структура ответа: не объект.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -297,7 +308,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
               type="text"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              placeholder="demo@login"
             />
           </label>
           <label className="input">
@@ -306,7 +316,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
               type="text"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="demo@password"
             />
           </label>
           <button className="btn" type="submit" disabled={loading}>
