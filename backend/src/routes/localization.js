@@ -8,13 +8,24 @@ router.post('/1', (_req, res) => {
   });
 });
 
-router.post('/2', (_req, res) => {
-  setTimeout(() => {
-    res.status(504).json({
-      error: 'Gateway Timeout',
-      message: 'Сервер не успел обработать запрос за отведённое время'
+router.post('/2', (req, res) => {
+  const { login, password, pass } = req.body ?? {};
+
+  if (typeof login === 'string' && typeof password === 'string') {
+    return res.json({ success: true });
+  }
+
+  if (typeof login === 'string' && typeof pass === 'string' && typeof password === 'undefined') {
+    return res.status(400).json({
+      error: 'Некорректное тело запроса',
+      message: 'Ожидалось поле password, но получено pass.'
     });
-  }, 2500);
+  }
+
+  return res.status(400).json({
+    error: 'Некорректные данные',
+    message: 'Поля login и password обязательны для заполнения'
+  });
 });
 
 // сценарий 3 — сервер возвращает 504 после ожидания
