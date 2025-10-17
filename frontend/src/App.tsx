@@ -7,6 +7,7 @@ import { useAuthToken } from './ui/hooks/useAuthToken';
 
 export default function App() {
   const { login, logout, isAuthenticated } = useAuthToken();
+
   const [pathname, setPathname] = React.useState<string>(() => window.location.pathname);
   const [toast, setToast] = React.useState<string | null>(null);
   const toastTimeout = React.useRef<number | undefined>();
@@ -31,6 +32,7 @@ export default function App() {
     }, 2500);
   }, []);
 
+  // Обновляем pathname при навигации назад/вперёд
   React.useEffect(() => {
     const handlePop = () => {
       setPathname(window.location.pathname);
@@ -39,26 +41,31 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
 
+  // Признак маршрутов локализации
   const isLocalizationRoute = React.useMemo(
     () => pathname.startsWith('/localization'),
     [pathname]
   );
 
+  // Единая точка редиректов: разрешаем /localization*, иначе
+  // отправляем на '/' (если авторизован) или '/auth' (если нет)
   React.useEffect(() => {
-    if (isLocalizationRoute) {
-      return;
-    }
+    if (isLocalizationRoute) return;
     const desired = isAuthenticated ? '/' : '/auth';
     if (pathname !== desired) {
       navigate(desired, true);
     }
   }, [isAuthenticated, isLocalizationRoute, navigate, pathname]);
 
-  React.useEffect(() => () => {
-    if (toastTimeout.current) {
-      window.clearTimeout(toastTimeout.current);
-    }
-  }, []);
+  // Очистка таймера тостов
+  React.useEffect(
+    () => () => {
+      if (toastTimeout.current) {
+        window.clearTimeout(toastTimeout.current);
+      }
+    },
+    []
+  );
 
   const handleLoginSuccess = (tokens: AuthTokens) => {
     showToast('Вход выполнен');
