@@ -38,12 +38,9 @@ router.post('/3', (_req, res) => {
   }, 8000);
 });
 
-// сценарий 4 — возврат логина и пароля
+// сценарий 4 — успешный ответ без ожидаемых полей
 router.post('/4', (req, res) => {
-  res.json({
-    login: req.body?.login ?? null,
-    pass: req.body?.password ?? null
-  });
+  res.json({ success: true });
 });
 
 router.post('/5', (_req, res) => {
