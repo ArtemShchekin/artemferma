@@ -7,40 +7,7 @@ interface LocalizationPageProps {
 
 type ScenarioId = '1' | '2' | '3' | '4' | '5' | '6';
 
-interface ScenarioMeta {
-  title: string;
-  description: string;
-}
-
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api';
-
-const SCENARIO_META: Record<ScenarioId, ScenarioMeta> = {
-  '1': {
-    title: 'Ошибка в консоли',
-    description: 'Запрос не уходит, а в консоли появляется сообщение об ошибке.'
-  },
-  '2': {
-    title: 'Некорректное тело запроса',
-    description: 'Запрос уходит с полем pass вместо password, поэтому сервер возвращает 400.'
-  },
-  '3': {
-    title: 'Сервер отвечает 504',
-    description:
-      'Запрос уходит корректно, но сервер слишком долго обрабатывает его и возвращает 504 ошибку.'
-  },
-  '4': {
-    title: 'Неправильные данные в ответе',
-    description: 'Запрос успешен, но сервер возвращает поле pass вместо password.'
-  },
-  '5': {
-    title: 'Внутренняя ошибка сервера без уведомления',
-    description: 'Запрос завершился с 500 ошибкой, но пользователь не получил уведомления.'
-  },
-  '6': {
-    title: 'Ответ получен, но не показан',
-    description: 'Запрос успешен, но результат не отображается пользователю.'
-  }
-};
 
 const SCENARIO_ORDER: ScenarioId[] = ['1', '2', '3', '4', '5', '6'];
 
@@ -55,7 +22,7 @@ export default function LocalizationPage({ path, onNavigate }: LocalizationPageP
     return null;
   }
 
-  if (segment && !SCENARIO_META[segment]) {
+  if (segment && !SCENARIO_ORDER.includes(segment)) {
     return (
       <div className="localization-page">
         <div className="card localization-card">
@@ -87,7 +54,7 @@ export default function LocalizationPage({ path, onNavigate }: LocalizationPageP
                   onClick={() => onNavigate(`/localization/${id}`)}
                 >
                   <span className="localization-id">{id}</span>
-                  <span className="localization-text">{SCENARIO_META[id].title}</span>
+                  <span className="localization-text">Сценарий {id}</span>
                 </button>
               </li>
             ))}
@@ -110,8 +77,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
   const [password, setPassword] = React.useState('');
   const [status, setStatus] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const description = SCENARIO_META[id].description;
-
   const currentIndex = React.useMemo(() => SCENARIO_ORDER.indexOf(id), [id]);
   const prevScenario = currentIndex > 0 ? SCENARIO_ORDER[currentIndex - 1] : null;
   const nextScenario = currentIndex < SCENARIO_ORDER.length - 1 ? SCENARIO_ORDER[currentIndex + 1] : null;
@@ -303,9 +268,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           </div>
         </div>
 
-        <h2>{SCENARIO_META[id].title}</h2>
-        <p className="localization-description">{description}</p>
-
         <form className="localization-form" onSubmit={submit}>
           <label className="input">
             <span>Логин</span>
@@ -329,13 +291,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
         </form>
 
         {status ? <div className="localization-status">{status}</div> : null}
-
-        {id === '5' ? (
-          <p className="localization-hint">Обратите внимание, что визуального уведомления об ошибке нет.</p>
-        ) : null}
-        {id === '6' ? (
-          <p className="localization-hint">Ответ получен. Откройте консоль, чтобы увидеть сообщение от разработчика.</p>
-        ) : null}
       </div>
     </div>
   );
