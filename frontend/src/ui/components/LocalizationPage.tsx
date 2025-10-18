@@ -43,14 +43,16 @@ export default function LocalizationPage({ path, onNavigate }: LocalizationPageP
       <div className="localization-page">
         <div className="card localization-card">
           <h2>Локализация ошибок</h2>
-          <p>
-            Выберите сценарий, чтобы показать учащимся, как диагностировать различные проблемы при авторизации.
-          </p>
           <p className="localization-hint">
             В идеальном случае клиент отправляет POST-запрос с телом {`{ "login": "...", "password": "..." }`}.
           </p>
           <p className="localization-hint">
-            Сервер должен ответить статусом 200 OK и вернуть JSON с полями <code>login</code> и <code>password</code>, совпадающими с запросом.
+            Сервер должен ответить статусом 200 OK и вернуть JSON с телом {`{
+    "success": true,
+    "tokens": {
+        "accessToken": "demo-access",
+        "refreshToken": "demo-refresh"
+    }`}.
           </p>
           <ul className="localization-list">
             {SCENARIO_ORDER.map((id) => (
