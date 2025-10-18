@@ -50,8 +50,8 @@ export default function LocalizationPage({ path, onNavigate }: LocalizationPageP
             Сервер должен ответить статусом 200 OK и вернуть JSON с телом {`{
     "success": true,
     "tokens": {
-        "accessToken": "demo-access",
-        "refreshToken": "demo-refresh"
+        "accessToken": "...",
+        "refreshToken": "..."
     }`}.
           </p>
           <ul className="localization-list">
