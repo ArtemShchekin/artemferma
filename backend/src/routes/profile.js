@@ -4,7 +4,7 @@ import { getPool, withTransaction } from '../db/pool.js';
 import { NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { ensureProfileInitialized, ensureProfileWithConnection } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
-import config from '../config/index.js';
+import { buildPricePayload } from '../utils/pricing.js';
 import { redactProfilePayload } from '../utils/redact.js';
 
 const DEFAULT_PROFILE = {
@@ -19,27 +19,7 @@ const DEFAULT_PROFILE = {
   level: 1,
   yogurt_ml: 0,
   sunflower_oil_ml: 0,
-  salads_eaten: 0};
-
-const PRICE_PAYLOAD = {
-  purchase: {
-    basePrice: config.prices.purchaseBase,
-    advPrice: config.prices.purchaseAdv
-  },
-  sale: {
-    basePrice: config.prices.saleBase,
-    advPrice: config.prices.saleAdv
-  },
-  supplies: {
-    yogurt: {
-      price: config.supplies.yogurt.price,
-      volume: config.supplies.yogurt.volume
-    },
-    sunflowerOil: {
-      price: config.supplies.sunflowerOil.price,
-      volume: config.supplies.sunflowerOil.volume
-    }
-  }
+  salads_eaten: 0
 };
 
 const toInt = (value, fallback = 0) => {
@@ -59,6 +39,7 @@ export function mapProfileRow(profileRow) {
   const yogurtMl = toInt(source.yogurt_ml, 0);
   const sunflowerOilMl = toInt(source.sunflower_oil_ml, 0);
   const saladsEaten = toInt(source.salads_eaten, 0);
+  const prices = buildPricePayload();
 
   return {
     isCoolFarmer: Boolean(source.is_cool),
@@ -74,10 +55,7 @@ export function mapProfileRow(profileRow) {
     sunflowerOilMl,
     saladsEaten,
     isFatFarmer: saladsEaten >= 3,
-    prices: {
-      purchase: { ...PRICE_PAYLOAD.purchase },
-      sale: { ...PRICE_PAYLOAD.sale },
-      supplies: { ...PRICE_PAYLOAD.supplies }    }
+    prices
   };
 }
 

@@ -6,6 +6,7 @@ import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
+import { buildPricePayload } from '../utils/pricing.js';
 
 const router = Router();
 
@@ -19,26 +20,7 @@ router.get(
       userId: req.user.id
     });
 
-    const response = {
-      purchase: {
-        basePrice: config.prices.purchaseBase,
-        advPrice: config.prices.purchaseAdv
-      },
-      sale: {
-        basePrice: config.prices.saleBase,
-        advPrice: config.prices.saleAdv
-      },
-      supplies: {
-        yogurt: {
-          price: config.supplies.yogurt.price,
-          volume: config.supplies.yogurt.volume
-        },
-        sunflowerOil: {
-          price: config.supplies.sunflowerOil.price,
-          volume: config.supplies.sunflowerOil.volume
-        }
-      }
-    };
+    const response = buildPricePayload();
 
     res.json(response);
     logApiResponse('Shop prices requested', {

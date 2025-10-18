@@ -23,7 +23,7 @@ export class UnauthorizedError extends HttpError {
   constructor(message = 'unauthorized') {
     super(401, message);
   }
-  }
+}
 
 export class NotFoundError extends HttpError {
   constructor(message = 'Не найдено') {
