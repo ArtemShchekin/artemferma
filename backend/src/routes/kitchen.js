@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
-import { getPool, withTransaction } from '../db/pool.js';
-import { ensureProfileInitialized, ensureProfileWithConnection } from '../services/user-setup.js';
+import { withTransaction } from '../db/pool.js';
+import { ensureProfileWithConnection } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
 import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { SEED_TYPES } from '../utils/seeds.js';
 
 const router = Router();
 
@@ -32,7 +33,7 @@ const RECIPES = {
   }
 };
 
-const TRACKED_TYPES = ['mango', 'carrot', 'cabbage', 'radish'];
+const KNOWN_VEGETABLE_TYPES = [...new Set(SEED_TYPES)];
 
 function toInt(value, fallback = 0) {
   if (value === undefined || value === null || value === '') {
@@ -43,32 +44,50 @@ function toInt(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-async function loadKitchenState(userId) {
-  const profile = await ensureProfileInitialized(userId);
-  const pool = getPool();
-  const [rows] = await pool.query(
-    'SELECT type FROM inventory WHERE user_id = ? AND kind = "veg_washed"',
-    [userId]
-  );
-
-  const vegetables = TRACKED_TYPES.reduce((acc, type) => {
+function buildVegetableCounts(rows) {
+  const counts = KNOWN_VEGETABLE_TYPES.reduce((acc, type) => {
     acc[type] = 0;
     return acc;
   }, {});
 
   for (const row of rows) {
-    if (vegetables[row.type] !== undefined) {
-      vegetables[row.type] += 1;
+    if (!row || !row.type) {
+      continue;
     }
+    if (counts[row.type] === undefined) {
+      counts[row.type] = 0;
+    }
+    counts[row.type] += 1;
   }
+
+  return counts;
+}
+
+function mapKitchenState(profile, vegRows) {
+  const vegetables = buildVegetableCounts(vegRows);
+  const saladsEaten = toInt(profile.salads_eaten, 0);
 
   return {
     vegetables,
     yogurtMl: toInt(profile.yogurt_ml, 0),
     sunflowerOilMl: toInt(profile.sunflower_oil_ml, 0),
-    saladsEaten: toInt(profile.salads_eaten, 0),
-    isFatFarmer: toInt(profile.salads_eaten, 0) >= 3
+    saladsEaten,
+    isFatFarmer: saladsEaten >= 3
   };
+}
+
+async function loadKitchenStateWithConnection(connection, userId) {
+  const profile = await ensureProfileWithConnection(connection, userId);
+  const [rows] = await connection.query(
+    'SELECT type FROM inventory WHERE user_id = ? AND kind = "veg_washed"',
+    [userId]
+  );
+
+  return mapKitchenState(profile, rows);
+}
+
+async function loadKitchenState(userId) {
+  return withTransaction((connection) => loadKitchenStateWithConnection(connection, userId));
 }
 
 router.get(
@@ -193,33 +212,7 @@ router.post(
         [...params, req.user.id]
       );
 
-      const [[freshProfile]] = await connection.query(
-        'SELECT * FROM profiles WHERE user_id = ?',
-        [req.user.id]
-      );
-
-      const [vegRows] = await connection.query(
-        'SELECT type FROM inventory WHERE user_id = ? AND kind = "veg_washed"',
-        [req.user.id]
-      );
-
-      const vegetables = TRACKED_TYPES.reduce((acc, type) => {
-        acc[type] = 0;
-        return acc;
-      }, {});
-      for (const row of vegRows) {
-        if (vegetables[row.type] !== undefined) {
-          vegetables[row.type] += 1;
-        }
-      }
-
-      state = {
-        vegetables,
-        yogurtMl: toInt(freshProfile.yogurt_ml, 0),
-        sunflowerOilMl: toInt(freshProfile.sunflower_oil_ml, 0),
-        saladsEaten: toInt(freshProfile.salads_eaten, 0),
-        isFatFarmer: toInt(freshProfile.salads_eaten, 0) >= 3
-      };
+      state = await loadKitchenStateWithConnection(connection, req.user.id);
     });
 
     res.json(state);

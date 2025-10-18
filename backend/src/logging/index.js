@@ -136,8 +136,6 @@ async function sendToOpenSearch(body) {
     }
     const forceImmediate = Boolean(config.opensearch.immediateRefresh);
     const refresh = forceImmediate ? true : false;
- codex/add-database-logging-for-sql-queries-4wtrbq
-
     await osClient.index({ index: config.opensearch.index, body, refresh });
     if (forceImmediate) {
       try {
@@ -197,7 +195,6 @@ function prepareApiPayload(extra = {}) {
 
 function logApiStage(stage, message, extra = {}) {
   const payload = prepareApiPayload({ stage, ...extra });
- codex/add-database-logging-for-sql-queries-4wtrbq
   return logAndSend('info', message, payload);
 }
 
@@ -216,7 +213,6 @@ export function logApiError(message, extra = {}) {
 
 export function logHttpEvent(eventName, extra) {
   const payload = {
- codex/add-database-logging-for-sql-queries-4wtrbq
     event: 'http_event',
     'event.eventname': eventName,
     ...extra
@@ -232,7 +228,6 @@ export function logStartup(extra = {}) {
 }
 
 export function logShutdown(reason, extra = {}) {
- codex/add-database-logging-for-sql-queries-4wtrbq
   return logInfo('Backend shutting down', { event: 'shutdown', reason, ...extra });
 }
 
