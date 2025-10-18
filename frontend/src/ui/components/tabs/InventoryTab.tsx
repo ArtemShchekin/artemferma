@@ -9,12 +9,14 @@ interface InventoryItem {
   type: SeedType;
   status: string;
   created_at: string;
+  is_rotten?: boolean;
 }
 
 interface InventoryResponse {
   seeds: InventoryItem[];
   vegRaw: InventoryItem[];
   vegWashed: InventoryItem[];
+  vegRotten: InventoryItem[];
 }
 
 interface InventoryTabProps {
@@ -22,7 +24,12 @@ interface InventoryTabProps {
 }
 
 export function InventoryTab({ onToast }: InventoryTabProps) {
-  const [inventory, setInventory] = React.useState<InventoryResponse>({ seeds: [], vegRaw: [], vegWashed: [] });
+  const [inventory, setInventory] = React.useState<InventoryResponse>({
+    seeds: [],
+    vegRaw: [],
+    vegWashed: [],
+    vegRotten: []
+  });
 
   const loadInventory = React.useCallback(async () => {
     const { data } = await api.get<InventoryResponse>('/inventory');
@@ -36,6 +43,12 @@ export function InventoryTab({ onToast }: InventoryTabProps) {
   const wash = async (inventoryId: number) => {
     await api.patch(`/inventory/wash/${inventoryId}`);
     onToast('Вымыто');
+    loadInventory();
+  };
+
+  const discard = async (inventoryId: number) => {
+    await api.delete(`/inventory/${inventoryId}`);
+    onToast('Выброшено');
     loadInventory();
   };
 
@@ -94,6 +107,27 @@ export function InventoryTab({ onToast }: InventoryTabProps) {
                   <div>{SEED_NAMES[item.type]}</div>
                 </div>
                 <div className="badge">{item.status}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h3>Протухшие овощи</h3>
+        {inventory.vegRotten.length === 0 ? (
+          <div>Пусто</div>
+        ) : (
+          <div className="grid">
+            {inventory.vegRotten.map((item) => (
+              <div key={item.id} className="shop-item">
+                <div className="shop-left">
+                  <img src={SEED_ICONS[item.type]} alt="" />
+                  <div>{SEED_NAMES[item.type]}</div>
+                </div>
+                <button className="btn danger" onClick={() => discard(item.id)}>
+                  Выкинуть
+                </button>
               </div>
             ))}
           </div>

@@ -7,6 +7,33 @@ import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 const router = Router();
 
+const ROTTEN_THRESHOLD_SQL = 'DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)';
+
+async function markRottenVegetables(connection, userId, inventoryId = null) {
+  let query =
+    "UPDATE inventory SET is_rotten = 1, status = 'rotten' WHERE user_id = ? AND kind = 'veg_raw' AND is_rotten = 0 AND created_at <= " +
+    ROTTEN_THRESHOLD_SQL;
+  const params = [userId];
+
+  if (inventoryId !== null) {
+    query += ' AND id = ?';
+    params.push(inventoryId);
+  }
+
+  await connection.query(query, params);
+}
+
+function normalizeInventoryRow(row) {
+  return {
+    id: row.id,
+    kind: row.kind,
+    type: row.type,
+    status: row.status,
+    created_at: row.created_at,
+    is_rotten: Boolean(row.is_rotten)
+  };
+}
+
 router.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -18,16 +45,41 @@ router.get(
     });
 
     const pool = getPool();
+    await markRottenVegetables(pool, req.user.id);
+
     const [rows] = await pool.query(
-      'SELECT id, kind, type, status, created_at FROM inventory WHERE user_id = ? ORDER BY id DESC',
+      'SELECT id, kind, type, status, created_at, is_rotten FROM inventory WHERE user_id = ? ORDER BY id DESC',
       [req.user.id]
     );
 
-    const seeds = rows.filter((row) => row.kind === 'seed');
-    const vegRaw = rows.filter((row) => row.kind === 'veg_raw');
-    const vegWashed = rows.filter((row) => row.kind === 'veg_washed');
+    const seeds = [];
+    const vegRaw = [];
+    const vegWashed = [];
+    const vegRotten = [];
 
-    const response = { seeds, vegRaw, vegWashed };
+    for (const row of rows) {
+      const item = normalizeInventoryRow(row);
+
+      if (row.kind === 'seed') {
+        seeds.push(item);
+        continue;
+      }
+
+      if (row.kind === 'veg_washed') {
+        vegWashed.push(item);
+        continue;
+      }
+
+      if (row.kind === 'veg_raw') {
+        if (item.is_rotten) {
+          vegRotten.push({ ...item, status: 'rotten' });
+        } else {
+          vegRaw.push(item);
+        }
+      }
+    }
+
+    const response = { seeds, vegRaw, vegWashed, vegRotten };
     res.json(response);
     logApiResponse('Inventory requested', {
       event: 'inventory.list',
@@ -37,6 +89,7 @@ router.get(
       seeds: seeds.length,
       vegRaw: vegRaw.length,
       vegWashed: vegWashed.length,
+      vegRotten: vegRotten.length,
       response
     });
   })
@@ -63,16 +116,18 @@ router.patch(
     }
 
     await withTransaction(async (connection) => {
+      await markRottenVegetables(connection, req.user.id, id);
+
       const [[item]] = await connection.query(
         'SELECT * FROM inventory WHERE id = ? AND user_id = ? FOR UPDATE',
         [id, req.user.id]
       );
-      if (!item || item.kind !== 'veg_raw') {
+      if (!item || item.kind !== 'veg_raw' || item.is_rotten) {
         throw new ValidationError();
       }
 
       await connection.query(
-        'UPDATE inventory SET kind = "veg_washed", status = "washed" WHERE id = ?',
+        'UPDATE inventory SET kind = "veg_washed", status = "washed", is_rotten = 0 WHERE id = ?',
         [id]
       );
     });
@@ -83,6 +138,54 @@ router.patch(
       event: 'inventory.wash',
       method: 'PATCH',
       path: `/api/inventory/wash/${id}`,
+      userId: req.user.id,
+      inventoryId: id,
+      response
+    });
+  })
+);
+
+router.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const { id: paramId } = req.params;
+    logApiRequest('Inventory item deleted', {
+      event: 'inventory.delete',
+      method: 'DELETE',
+      path: `/api/inventory/${paramId ?? ''}`,
+      userId: req.user.id,
+      inventoryId: paramId ?? null
+    });
+
+    if (paramId === undefined || paramId === null || paramId === '') {
+      throw new RequiredFieldError();
+    }
+
+    const id = Number(paramId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new ValidationError();
+    }
+
+    await withTransaction(async (connection) => {
+      await markRottenVegetables(connection, req.user.id, id);
+
+      const [[item]] = await connection.query(
+        'SELECT * FROM inventory WHERE id = ? AND user_id = ? FOR UPDATE',
+        [id, req.user.id]
+      );
+      if (!item || item.kind !== 'veg_raw' || !item.is_rotten) {
+        throw new ValidationError();
+      }
+
+      await connection.query('DELETE FROM inventory WHERE id = ?', [id]);
+    });
+
+    const response = { ok: true };
+    res.json(response);
+    logApiResponse('Inventory item deleted', {
+      event: 'inventory.delete',
+      method: 'DELETE',
+      path: `/api/inventory/${id}`,
       userId: req.user.id,
       inventoryId: id,
       response
