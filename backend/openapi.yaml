@@ -388,6 +388,22 @@ paths:
                   vegWashed:
                     type: array
                     items: { $ref: '#/components/schemas/InventoryItem' }
+                  vegRotten:
+                    type: array
+                    items: { $ref: '#/components/schemas/InventoryItem' }
+  /inventory/{id}:
+    delete:
+      security: [{ bearerAuth: [] }]
+      summary: Выкинуть протухший овощ
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
   /inventory/wash/{id}:
     patch:
       security: [{ bearerAuth: [] }]
