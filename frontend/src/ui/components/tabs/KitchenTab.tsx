@@ -11,6 +11,7 @@ interface KitchenState {
   sunflowerOilMl: number;
   saladsEaten: number;
   isFatFarmer: boolean;
+  preparedSalads: number;
 }
 
 interface KitchenTabProps {
@@ -166,15 +167,23 @@ export function KitchenTab({ onToast }: KitchenTabProps) {
     }
 
     try {
-      const { data } = await api.post<KitchenState>('/kitchen/salads', {
+      const { data: preparedState } = await api.post<KitchenState>('/kitchen/salads', {
         recipe: recipeKey,
         ingredients: selection
       });
-      setState(data);
+      setState(preparedState);
 
-       if (recipeKey === 'fruit') setFruitMessage(null);
-       else setVegetableMessage(null);
-       onToast('Салат готов!');
+      try {
+        const { data: eatenState } = await api.post<KitchenState>('/kitchen/salads/eat');
+        setState(eatenState);
+        if (recipeKey === 'fruit') setFruitMessage(null);
+        else setVegetableMessage(null);
+        onToast('Салат приготовлен и съеден!');
+      } catch (eatError) {
+        console.error('Failed to eat salad', eatError);
+        onToast('Салат приготовлен, но не съеден');
+        await load();
+      }
     } catch (error) {
       console.error('Failed to prepare salad', error);
       onToast('Не удалось приготовить салат');

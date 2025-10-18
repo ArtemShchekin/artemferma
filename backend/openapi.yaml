@@ -166,6 +166,7 @@ components:
         yogurtMl: { type: integer, minimum: 0 }
         sunflowerOilMl: { type: integer, minimum: 0 }
         saladsEaten: { type: integer, minimum: 0 }
+        preparedSalads: { type: integer, minimum: 0 }
         isFatFarmer: { type: boolean }
     InventoryItem:
       type: object
@@ -175,6 +176,7 @@ components:
         type: { type: string, enum: [radish, carrot, cabbage, mango, potato, eggplant] }
         status: { type: string }
         createdAt: { type: string, format: date-time }
+        isRotten: { type: boolean }
     Plot:
       type: object
       properties:
@@ -307,16 +309,6 @@ paths:
       responses:
         '200':
           description: OK
-  /shop/prices:
-    get:
-      security: [{ bearerAuth: [] }]
-      summary: Получить цены магазина
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ShopPrices' }
   /shop/sell:
     post:
       security: [{ bearerAuth: [] }]
@@ -361,6 +353,16 @@ paths:
                 ingredients:
                   type: object
                   additionalProperties: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KitchenState' }
+  /kitchen/salads/eat:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Съесть приготовленный салат
       responses:
         '200':
           description: OK

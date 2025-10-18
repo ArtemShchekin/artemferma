@@ -9,6 +9,7 @@ interface InventoryItem {
   type: SeedType;
   status: string;
   created_at: string;
+  is_rotten?: boolean;
 }
 
 interface InventoryResponse {

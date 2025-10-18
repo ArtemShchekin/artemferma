@@ -66,12 +66,14 @@ function buildVegetableCounts(rows) {
 function mapKitchenState(profile, vegRows) {
   const vegetables = buildVegetableCounts(vegRows);
   const saladsEaten = toInt(profile.salads_eaten, 0);
+  const preparedSalads = toInt(profile.prepared_salads, 0);
 
   return {
     vegetables,
     yogurtMl: toInt(profile.yogurt_ml, 0),
     sunflowerOilMl: toInt(profile.sunflower_oil_ml, 0),
     saladsEaten,
+    preparedSalads,
     isFatFarmer: saladsEaten >= 3
   };
 }
@@ -112,6 +114,83 @@ router.get(
   })
 );
 
+async function validateIngredients(definition, provided) {
+  const expected = {
+    ...definition.veg,
+    ...(definition.liquids.yogurtMl ? { yogurtMl: definition.liquids.yogurtMl } : {}),
+    ...(definition.liquids.sunflowerOilMl
+      ? { sunflowerOilMl: definition.liquids.sunflowerOilMl }
+      : {})
+  };
+
+  if (!provided) {
+    return;
+  }
+
+  for (const [key, required] of Object.entries(expected)) {
+    const value = toInt(provided[key], null);
+    if (value === null || value !== required) {
+      throw new ValidationError('Неверное количество ингредиентов');
+    }
+  }
+}
+
+async function prepareSalad(connection, userId, definition) {
+  const profile = await ensureProfileWithConnection(connection, userId);
+
+  if (definition.liquids.yogurtMl && toInt(profile.yogurt_ml, 0) < definition.liquids.yogurtMl) {
+    throw new ValidationError('Недостаточно йогурта');
+  }
+  if (
+    definition.liquids.sunflowerOilMl &&
+    toInt(profile.sunflower_oil_ml, 0) < definition.liquids.sunflowerOilMl
+  ) {
+    throw new ValidationError('Недостаточно подсолнечного масла');
+  }
+
+  const idsToRemove = [];
+
+  for (const [type, amount] of Object.entries(definition.veg)) {
+    if (!amount) {
+      continue;
+    }
+
+    const [items] = await connection.query(
+      'SELECT id FROM inventory WHERE user_id = ? AND kind = "veg_washed" AND type = ? ORDER BY id ASC LIMIT ? FOR UPDATE',
+      [userId, type, amount]
+    );
+
+    if (items.length < amount) {
+      throw new ValidationError('Недостаточно овощей для рецепта');
+    }
+
+    idsToRemove.push(...items.map((item) => item.id));
+  }
+
+  if (idsToRemove.length > 0) {
+    const placeholders = idsToRemove.map(() => '?').join(', ');
+    await connection.query(`DELETE FROM inventory WHERE id IN (${placeholders})`, idsToRemove);
+  }
+
+  const updates = [];
+  const params = [];
+
+  if (definition.liquids.yogurtMl) {
+    updates.push('yogurt_ml = yogurt_ml - ?');
+    params.push(definition.liquids.yogurtMl);
+  }
+  if (definition.liquids.sunflowerOilMl) {
+    updates.push('sunflower_oil_ml = sunflower_oil_ml - ?');
+    params.push(definition.liquids.sunflowerOilMl);
+  }
+  updates.push('prepared_salads = prepared_salads + 1');
+
+  await connection.query(
+    `UPDATE profiles SET ${updates.join(', ')} WHERE user_id = ?`,
+    [...params, userId]
+  );
+}
+
 router.post(
   '/salads',
   asyncHandler(async (req, res) => {
@@ -133,86 +212,11 @@ router.post(
       throw new ValidationError();
     }
 
-    const expected = {
-      ...definition.veg,
-      ...(definition.liquids.yogurtMl ? { yogurtMl: definition.liquids.yogurtMl } : {}),
-      ...(definition.liquids.sunflowerOilMl
-        ? { sunflowerOilMl: definition.liquids.sunflowerOilMl }
-        : {})
-    };
+    await validateIngredients(definition, ingredients);
 
-    if (ingredients) {
-      for (const [key, required] of Object.entries(expected)) {
-        const provided = toInt(ingredients[key], null);
-        if (provided === null || provided !== required) {
-          throw new ValidationError('Неверное количество ингредиентов');
-        }
-      }
-    }
-
-    let state;
-
-    await withTransaction(async (connection) => {
-      const profile = await ensureProfileWithConnection(connection, req.user.id);
-
-      if (
-        definition.liquids.yogurtMl &&
-        toInt(profile.yogurt_ml, 0) < definition.liquids.yogurtMl
-      ) {
-        throw new ValidationError('Недостаточно йогурта');
-      }
-      if (
-        definition.liquids.sunflowerOilMl &&
-        toInt(profile.sunflower_oil_ml, 0) < definition.liquids.sunflowerOilMl
-      ) {
-        throw new ValidationError('Недостаточно подсолнечного масла');
-      }
-
-      const idsToRemove = [];
-
-      for (const [type, amount] of Object.entries(definition.veg)) {
-        if (!amount) {
-          continue;
-        }
-        const [items] = await connection.query(
-          'SELECT id FROM inventory WHERE user_id = ? AND kind = "veg_washed" AND type = ? ORDER BY id ASC LIMIT ? FOR UPDATE',
-          [req.user.id, type, amount]
-        );
-
-        if (items.length < amount) {
-          throw new ValidationError('Недостаточно овощей для рецепта');
-        }
-
-        idsToRemove.push(...items.map((item) => item.id));
-      }
-
-      if (idsToRemove.length > 0) {
-        const placeholders = idsToRemove.map(() => '?').join(', ');
-        await connection.query(
-          `DELETE FROM inventory WHERE id IN (${placeholders})`,
-          idsToRemove
-        );
-      }
-
-      const updates = [];
-      const params = [];
-
-      if (definition.liquids.yogurtMl) {
-        updates.push('yogurt_ml = yogurt_ml - ?');
-        params.push(definition.liquids.yogurtMl);
-      }
-      if (definition.liquids.sunflowerOilMl) {
-        updates.push('sunflower_oil_ml = sunflower_oil_ml - ?');
-        params.push(definition.liquids.sunflowerOilMl);
-      }
-      updates.push('salads_eaten = salads_eaten + 1');
-
-      await connection.query(
-        `UPDATE profiles SET ${updates.join(', ')} WHERE user_id = ?`,
-        [...params, req.user.id]
-      );
-
-      state = await loadKitchenStateWithConnection(connection, req.user.id);
+    const state = await withTransaction(async (connection) => {
+      await prepareSalad(connection, req.user.id, definition);
+      return loadKitchenStateWithConnection(connection, req.user.id);
     });
 
     res.json(state);
@@ -222,6 +226,41 @@ router.post(
       path: '/api/kitchen/salads',
       userId: req.user.id,
       recipe,
+      response: state
+    });
+  })
+);
+
+router.post(
+  '/salads/eat',
+  asyncHandler(async (req, res) => {
+    logApiRequest('Salad eaten', {
+      event: 'kitchen.eatSalad',
+      method: 'POST',
+      path: '/api/kitchen/salads/eat',
+      userId: req.user.id
+    });
+
+    const state = await withTransaction(async (connection) => {
+      const profile = await ensureProfileWithConnection(connection, req.user.id);
+      if (toInt(profile.prepared_salads, 0) <= 0) {
+        throw new ValidationError('Нет готовых салатов');
+      }
+
+      await connection.query(
+        'UPDATE profiles SET prepared_salads = prepared_salads - 1, salads_eaten = salads_eaten + 1 WHERE user_id = ?',
+        [req.user.id]
+      );
+
+      return loadKitchenStateWithConnection(connection, req.user.id);
+    });
+
+    res.json(state);
+    logApiResponse('Salad eaten', {
+      event: 'kitchen.eatSalad',
+      method: 'POST',
+      path: '/api/kitchen/salads/eat',
+      userId: req.user.id,
       response: state
     });
   })
