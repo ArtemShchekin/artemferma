@@ -46,6 +46,12 @@ export default function LocalizationPage({ path, onNavigate }: LocalizationPageP
           <p>
             Выберите сценарий, чтобы показать учащимся, как диагностировать различные проблемы при авторизации.
           </p>
+          <p className="localization-hint">
+            В идеальном случае клиент отправляет POST-запрос с телом {`{ "login": "...", "password": "..." }`}.
+          </p>
+          <p className="localization-hint">
+            Сервер должен ответить статусом 200 OK и вернуть JSON с полями <code>login</code> и <code>password</code>, совпадающими с запросом.
+          </p>
           <ul className="localization-list">
             {SCENARIO_ORDER.map((id) => (
               <li key={id}>
@@ -100,7 +106,6 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
     switch (id) {
       case '1': {
         console.error('TypeError: Cannot read properties of undefined (reading "sendAuthorizationRequest")');
-        setStatus('Запрос не был отправлен. Подробности смотрите в консоли.');
         break;
       }
       case '2': {
@@ -120,14 +125,12 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
               data?.error ??
               'Ожидалось поле password, но сервер получил pass.';
             console.error(`HTTP ${response.status}: ${message}`);
-            setStatus(`Сервер отклонил запрос: ${message}`);
           } else {
-            setStatus('Сервер принял запрос, несмотря на поле pass вместо password.');
+            console.log('Сервер принял запрос, несмотря на поле pass вместо password.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           console.error(`Сетевая ошибка при отправке запроса: ${message}`);
-          setStatus('Не удалось отправить запрос.');
         } finally {
           setLoading(false);
         }
@@ -145,14 +148,12 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           if (!response.ok) {
             const message = data?.message ?? data?.error ?? 'Сервер вернул 504 ошибку.';
             console.error(`HTTP ${response.status}: ${message}`);
-            setStatus(`Сервер вернул ${response.status}: ${message}`);
           } else {
-            setStatus('Ответ получен, но ожидалась 504 ошибка.');
+            console.log('Ответ получен, но ожидалась 504 ошибка.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           console.error(`Сетевая ошибка: ${message}`);
-          setStatus('Произошла сетевая ошибка при ожидании ответа.');
         } finally {
           setLoading(false);
         }
@@ -169,22 +170,18 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           const data = await response.json();
           if (data && typeof data === 'object') {
             if (data.success === true) {
-              setStatus('Сервер вернул success: true вместо ожидаемых полей login и password.');
               console.error('Некорректная структура ответа: отсутствуют поля login и password.');
             } else if ('login' in data && 'password' in data) {
-              setStatus('Ответ соответствует ожиданиям: получены login и password.');
+              console.log('Ответ соответствует ожиданиям: получены login и password.');
             } else {
-              setStatus('Получена неожиданная структура ответа.');
               console.error('Некорректная структура ответа: отсутствуют ожидаемые поля.');
             }
           } else {
-            setStatus('Не удалось прочитать тело ответа.');
             console.error('Некорректная структура ответа: не объект.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           console.error(`Ошибка при обработке ответа: ${message}`);
-          setStatus('Не удалось обработать ответ сервера.');
         } finally {
           setLoading(false);
         }
@@ -224,12 +221,10 @@ function LocalizationScenario({ id, onNavigate }: LocalizationScenarioProps) {
           } else {
             const message = response.statusText || `Ошибка ${response.status}`;
             console.error(`HTTP ${response.status}: ${message}`);
-            setStatus('Сервер вернул ошибку при обработке запроса.');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           console.error(`Ошибка при обработке успешного ответа: ${message}`);
-          setStatus('Не удалось обработать ответ сервера.');
         } finally {
           setLoading(false);
         }
