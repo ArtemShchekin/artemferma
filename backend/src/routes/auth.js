@@ -47,8 +47,8 @@ router.post(
 
       const hash = await bcrypt.hash(password, 10);
       const [result] = await connection.query(
-        'INSERT INTO users (email, password_hash) VALUES (?, ?)',
-        [email, hash]
+        'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
+        [email, hash, 'user']
       );
 
       const userId = result.insertId;

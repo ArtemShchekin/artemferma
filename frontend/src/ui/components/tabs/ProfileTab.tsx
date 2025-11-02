@@ -23,6 +23,7 @@ interface ProfileResponse {
   sunflowerOilMl: number;
   saladsEaten: number;
   isFatFarmer: boolean;
+  isAdmin: boolean;
 }
 
 interface KitchenSnapshot {

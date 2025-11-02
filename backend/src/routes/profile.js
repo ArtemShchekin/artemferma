@@ -76,7 +76,10 @@ router.get(
     });
 
     const profile = await ensureProfileInitialized(req.user.id);
-    const response = mapProfileRow(profile, req.user.id);
+    const response = {
+      ...mapProfileRow(profile, req.user.id),
+      isAdmin: req.user.role === 'admin'
+    };
 
     res.json(response);
     logApiResponse('Profile requested', {
@@ -86,6 +89,7 @@ router.get(
       userId: req.user.id,
       isCoolFarmer: response.isCoolFarmer,
       level: response.level,
+      isAdmin: response.isAdmin,
       response
     });
   })

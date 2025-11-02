@@ -26,14 +26,21 @@ interface GardenTabProps {
   onToast: ToastFn;
 }
 
+interface GardenResponse {
+  plots: Plot[];
+  growthMinutes: number;
+  canUproot: boolean;
+}
+
 export function GardenTab({ onToast }: GardenTabProps) {
   const [plots, setPlots] = React.useState<Plot[]>([]);
   const [inventory, setInventory] = React.useState<InventorySeed[]>([]);
   const [growthMinutes, setGrowthMinutes] = React.useState(10);
+  const [canUproot, setCanUproot] = React.useState(false);
   const [, forceTick] = React.useReducer((tick) => tick + 1, 0);
 
   const loadData = React.useCallback(async () => {
-    const plotsResponse = await api.get<{ plots: Plot[]; growthMinutes: number }>('/garden/plots');
+    const plotsResponse = await api.get<GardenResponse>('/garden/plots');
     const plotList = Array.isArray(plotsResponse.data?.plots) ? plotsResponse.data.plots : [];
     setPlots(plotList);
 
@@ -43,6 +50,7 @@ export function GardenTab({ onToast }: GardenTabProps) {
     const minutes = plotsResponse.data?.growthMinutes;
     const parsed = typeof minutes === 'number' ? minutes : Number(minutes);
     setGrowthMinutes(Number.isFinite(parsed) ? parsed : 10);
+    setCanUproot(Boolean(plotsResponse.data?.canUproot));
   }, []);
 
   React.useEffect(() => {
@@ -63,6 +71,12 @@ export function GardenTab({ onToast }: GardenTabProps) {
   const harvest = async (slot: number) => {
     await api.post('/garden/harvest', { slot });
     onToast('Собрано');
+    loadData();
+  };
+
+  const uproot = async (slot: number) => {
+    await api.delete(`/garden/uproot/${slot}`);
+    onToast('Выкопано');
     loadData();
   };
 
@@ -105,6 +119,11 @@ export function GardenTab({ onToast }: GardenTabProps) {
                 ) : (
                   <div>Созревание: {remainingTime(plot.plantedAt)}</div>
                 )}
+                {canUproot ? (
+                  <button className="btn danger" onClick={() => uproot(plot.slot)}>
+                    <img src={icPlant} alt="" /> Выкопать
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
