@@ -33,14 +33,19 @@ function buildFallbackSpec() {
 }
 
 function setupSwagger(app) {
+  const swaggerDocument = loadOpenApi() ?? buildFallbackSpec();
+  const swaggerDocumentUrl = '/api/docs/openapi.json';
+
   const swaggerUiOptions = {
     explorer: true,
     swaggerOptions: {
+      url: swaggerDocumentUrl,
+      spec: swaggerDocument,
       persistAuthorization: true
     }
   };
 
-  app.get('/api/docs/openapi.json', (_req, res) => {
+  app.get(swaggerDocumentUrl, (_req, res) => {
     const spec = loadOpenApi();
     if (spec) {
       res.json(spec);
@@ -49,7 +54,6 @@ function setupSwagger(app) {
     }
   });
 
-  const swaggerDocument = loadOpenApi() ?? buildFallbackSpec();
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerUiOptions));
 }
 
