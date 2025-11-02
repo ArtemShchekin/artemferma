@@ -3,6 +3,9 @@ openapi: 3.0.3
 info:
   title: Artem Ferm API
   version: 1.0.0
+externalDocs:
+  description: Импортировать коллекцию в Postman
+  url: /api/docs/openapi.json
 servers:
   - url: /api
 components:
@@ -54,6 +57,9 @@ components:
     Profile:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         isCoolFarmer: { type: boolean }
         firstName: { type: string, nullable: true }
         lastName: { type: string, nullable: true }

@@ -31,8 +31,11 @@ const toInt = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export function mapProfileRow(profileRow) {
+export function mapProfileRow(profileRow, fallbackUserId = null) {
   const source = profileRow ?? DEFAULT_PROFILE;
+  const normalizedFallback = fallbackUserId !== undefined && fallbackUserId !== null ? Number(fallbackUserId) : null;
+  const userId =
+    source.user_id !== undefined && source.user_id !== null ? Number(source.user_id) : normalizedFallback;
   const soldCount = toInt(source.sold_count, DEFAULT_PROFILE.sold_count);
   const balance = toInt(source.balance, DEFAULT_PROFILE.balance);
   const level = toInt(source.level, DEFAULT_PROFILE.level);
@@ -42,6 +45,7 @@ export function mapProfileRow(profileRow) {
   const prices = buildPricePayload();
 
   return {
+    id: userId,
     isCoolFarmer: Boolean(source.is_cool),
     firstName: source.first_name ?? null,
     lastName: source.last_name ?? null,
@@ -72,7 +76,7 @@ router.get(
     });
 
     const profile = await ensureProfileInitialized(req.user.id);
-    const response = mapProfileRow(profile);
+    const response = mapProfileRow(profile, req.user.id);
 
     res.json(response);
     logApiResponse('Profile requested', {
@@ -115,7 +119,7 @@ router.get(
       profile = await ensureProfileWithConnection(connection, userId);
     });
 
-    const response = mapProfileRow(profile);
+    const response = mapProfileRow(profile, userId);
     res.json(response);
     logApiResponse('Profile requested by id', {
       event: 'profile.getById',
@@ -206,7 +210,7 @@ router.put(
     }
 
     const [[updatedProfile]] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [req.user.id]);
-    const response = mapProfileRow(updatedProfile);
+    const response = mapProfileRow(updatedProfile, req.user.id);
     res.json(response);
     const redactedResponse = redactProfilePayload(response);
     logApiResponse('Profile updated', {

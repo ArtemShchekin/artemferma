@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
-import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { ConflictError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 const router = Router();
@@ -130,7 +130,15 @@ router.patch(
       );
 
       // Мы можем мыть только свежий сырой овощ
-      if (!item || item.kind !== 'veg_raw' || item.is_rotten) {
+      if (!item) {
+        throw new ValidationError();
+      }
+
+      if (item.kind === 'veg_washed') {
+        throw new ConflictError('Данный овощ уже чистый');
+      }
+
+      if (item.kind !== 'veg_raw' || item.is_rotten) {
         throw new ValidationError();
       }
 
