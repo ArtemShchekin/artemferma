@@ -5,11 +5,12 @@ import { signAccessToken, signRefreshToken } from '../utils/jwt.js';
 const toTokenPayload = (user) => ({
   id: user.id,
   email: user.email,
+  role: user.role,
   tokenVersion: user.token_version
 });
 
 async function loadUserTokenRow(userId) {
-  const user = await queryOne('SELECT id, email, token_version FROM users WHERE id = ?', [userId]);
+  const user = await queryOne('SELECT id, email, role, token_version FROM users WHERE id = ?', [userId]);
   if (!user) {
     throw new UnauthorizedError();
   }

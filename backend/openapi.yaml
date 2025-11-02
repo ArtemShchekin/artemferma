@@ -61,6 +61,9 @@ components:
           type: integer
           readOnly: true
         isCoolFarmer: { type: boolean }
+        isAdmin:
+          type: boolean
+          readOnly: true
         firstName: { type: string, nullable: true }
         lastName: { type: string, nullable: true }
         middleName: { type: string, nullable: true }
@@ -198,6 +201,9 @@ components:
           type: array
           items: { $ref: '#/components/schemas/Plot' }
         growthMinutes: { type: integer }
+        canUproot:
+          type: boolean
+          description: "Флаг доступности выкапывания грядок (только для администратора)"
 paths:
   /auth/register:
     post:
@@ -467,3 +473,15 @@ paths:
                 slot: { type: integer }
       responses:
         '200': { description: OK }
+  /garden/uproot/{slot}:
+    delete:
+      security: [{ bearerAuth: [] }]
+      summary: Выкопать овощ до созревания (только админ)
+      parameters:
+        - in: path
+          name: slot
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '403': { description: Forbidden }

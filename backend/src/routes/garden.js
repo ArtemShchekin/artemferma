@@ -6,6 +6,7 @@ import { RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
+import { requireAdmin } from '../middleware/authorize.js';
 
 
 const router = Router();
@@ -32,7 +33,8 @@ router.get(
 
     const response = {
       plots: mapped,
-      growthMinutes: config.garden.growthMinutes
+      growthMinutes: config.garden.growthMinutes,
+      canUproot: req.user.role === 'admin'
     };
     res.json(response);
     logApiResponse('Garden plots requested', {
@@ -42,6 +44,7 @@ router.get(
       userId: req.user.id,
       slots: mapped.length,
       growthMinutes: config.garden.growthMinutes,
+      canUproot: response.canUproot,
       response
     });
   })
@@ -170,6 +173,60 @@ router.post(
       userId: req.user.id,
       slot: slotNumber,
       cropType: harvestedType,
+      response
+    });
+  })
+);
+
+router.delete(
+  '/uproot/:slot',
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { slot: slotParam } = req.params || {};
+
+    logApiRequest('Garden plot uprooted', {
+      event: 'garden.uproot',
+      method: 'DELETE',
+      path: `/api/garden/uproot/${slotParam ?? ''}`,
+      userId: req.user.id,
+      slot: slotParam ?? null
+    });
+
+    const slotNumber = Number(slotParam);
+    if (!Number.isInteger(slotNumber) || slotNumber <= 0) {
+      throw new ValidationError();
+    }
+
+    let uprootedType = null;
+
+    await withTransaction(async (connection) => {
+      const [[plot]] = await connection.query(
+        'SELECT * FROM plots WHERE user_id = ? AND slot = ? FOR UPDATE',
+        [req.user.id, slotNumber]
+      );
+
+      if (!plot || !plot.type || plot.harvested) {
+        throw new ValidationError();
+      }
+
+      await connection.query(
+        'UPDATE plots SET harvested = 0, type = NULL, planted_at = NULL WHERE user_id = ? AND slot = ?',
+        [req.user.id, slotNumber]
+      );
+
+      uprootedType = plot.type;
+    });
+
+    const response = { ok: true };
+    res.json(response);
+
+    logApiResponse('Garden plot uprooted', {
+      event: 'garden.uproot',
+      method: 'DELETE',
+      path: `/api/garden/uproot/${slotNumber}`,
+      userId: req.user.id,
+      slot: slotNumber,
+      uprootedType,
       response
     });
   })

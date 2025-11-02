@@ -4,6 +4,7 @@ import config from '../config/index.js';
 const buildPayload = (payload) => ({
   id: payload.id,
   email: payload.email,
+  role: payload.role,
   tokenVersion: payload.tokenVersion
 });
 
