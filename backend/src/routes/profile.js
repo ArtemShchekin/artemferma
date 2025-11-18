@@ -167,14 +167,11 @@ router.put(
     });
 
     if (isCoolFarmer) {
-      if (!nickname) {
-        throw new RequiredFieldError();
+      if (!nickname || !passport) {
+        throw new RequiredFieldError('для крутого фермера нужен никнейм и паспорт');
       }
       if (!/^[A-Za-z]{2,15}$/.test(nickname)) {
         throw new ValidationError();
-      }
-      if (!passport) {
-        throw new RequiredFieldError();
       }
       if (!/^\d{6}$/.test(passport)) {
         throw new ValidationError();
@@ -194,7 +191,7 @@ router.put(
     } else {
       const ru = /^[А-ЯЁа-яё\-\s]{2,40}$/;
       if (!firstName || !lastName || !middleName) {
-        throw new RequiredFieldError();
+        throw new RequiredFieldError('для обычного фермера нужно Ф.И.О.');
       }
       if (!ru.test(firstName) || !ru.test(lastName) || !ru.test(middleName)) {
         throw new ValidationError();

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
-import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
@@ -183,7 +183,10 @@ router.post(
         'SELECT * FROM inventory WHERE id = ? AND user_id = ? FOR UPDATE',
         [id, req.user.id]
       );
-      if (!item || item.kind !== 'veg_washed') {
+      if (!item) {
+        throw new NotFoundError('Овощ с указанным идентификатором отсутствует');
+      }
+      if (item.kind !== 'veg_washed') {
         throw new ValidationError();
       }
       await ensureProfileWithConnection(connection, req.user.id);

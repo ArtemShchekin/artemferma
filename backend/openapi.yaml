@@ -3,6 +3,8 @@ openapi: 3.0.3
 info:
   title: Artem Ferm API
   version: 1.0.0
+  description: |
+    Коллекцию можно скачать в формате JSON по ссылке [/api/docs/openapi.json](/api/docs/openapi.json).
 externalDocs:
   description: Импортировать коллекцию в Postman
   url: /api/docs/openapi.json
@@ -177,6 +179,26 @@ components:
         saladsEaten: { type: integer, minimum: 0 }
         preparedSalads: { type: integer, minimum: 0 }
         isFatFarmer: { type: boolean }
+    KitchenSaladReq:
+      type: object
+      required: [recipe]
+      properties:
+        recipe:
+          type: string
+          enum: [fruit, vegetable]
+        ingredients:
+          type: object
+          description: |
+            Необязательный объект с точными количествами ингредиентов.
+            Значения должны в точности совпадать с требованиями выбранного рецепта.
+          additionalProperties: false
+          properties:
+            mango: { type: integer, minimum: 0 }
+            carrot: { type: integer, minimum: 0 }
+            cabbage: { type: integer, minimum: 0 }
+            radish: { type: integer, minimum: 0 }
+            yogurtMl: { type: integer, minimum: 0 }
+            sunflowerOilMl: { type: integer, minimum: 0 }
     InventoryItem:
       type: object
       properties:
@@ -257,6 +279,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Profile' }
+        '401':
+          description: Требуется авторизация
     put:
       security: [{ bearerAuth: [] }]
       summary: Редактирование профиля
@@ -268,6 +292,11 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: |
+            Возможные ошибки:
+              - «для крутого фермера нужен никнейм и паспорт» — если не переданы оба поля для крутого фермера.
+              - «для обычного фермера нужно Ф.И.О.» — если отсутствуют Ф.И.О. для обычного режима.
   /profile/{id}:
     get:
       security: [{ bearerAuth: [] }]
@@ -337,6 +366,8 @@ paths:
       responses:
         '200':
           description: OK
+        '404':
+          description: Овощ с указанным идентификатором отсутствует
   /kitchen:
     get:
       security: [{ bearerAuth: [] }]
@@ -355,22 +386,15 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [recipe]
-              properties:
-                recipe:
-                  type: string
-                  enum: [fruit, vegetable]
-                ingredients:
-                  type: object
-                  additionalProperties: { type: integer }
+            schema: { $ref: '#/components/schemas/KitchenSaladReq' }
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema: { $ref: '#/components/schemas/KitchenState' }
+        '400':
+          description: Ошибка валидации ингредиентов или нехватка продуктов
   /kitchen/salads/eat:
     post:
       security: [{ bearerAuth: [] }]
@@ -418,6 +442,8 @@ paths:
       responses:
         '200':
           description: OK
+        '404':
+          description: Овощ с указанным идентификатором отсутствует
   /inventory/wash/{id}:
     patch:
       security: [{ bearerAuth: [] }]
@@ -431,6 +457,10 @@ paths:
       responses:
         '200':
           description: OK
+        '404':
+          description: Овощ с указанным идентификатором отсутствует
+        '409':
+          description: Данный овощ чистый
   /garden/plots:
     get:
       security: [{ bearerAuth: [] }]
@@ -458,6 +488,7 @@ paths:
                 inventoryId: { type: integer }
       responses:
         '200': { description: OK }
+        '409': { description: Грядка уже занята }
   /garden/harvest:
     post:
       security: [{ bearerAuth: [] }]
@@ -473,6 +504,7 @@ paths:
                 slot: { type: integer }
       responses:
         '200': { description: OK }
+        '409': { description: 'Овощ ещё совсем зелёный' }
   /garden/uproot/{slot}:
     delete:
       security: [{ bearerAuth: [] }]
