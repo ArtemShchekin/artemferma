@@ -67,14 +67,44 @@ function isIgnorableMigrationError(err, statement) {
   return false;
 }
 
+async function ensureMigrationsRegistry(pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL UNIQUE,
+      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function loadAppliedMigrations(pool) {
+  const [rows] = await pool.query('SELECT filename FROM schema_migrations');
+  return new Set(rows.map(row => row.filename));
+}
+
+async function markMigrationApplied(pool, file) {
+  await pool.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
+}
+
 async function runMigrations() {
   await ensureDatabaseConnection();
   const migrationsDir = fileURLToPath(new URL('../migrations', import.meta.url));
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
   const pool = getPool();
+  await ensureMigrationsRegistry(pool);
+  const appliedMigrations = await loadAppliedMigrations(pool);
+  let appliedCount = 0;
 
   for (const file of files) {
+    if (appliedMigrations.has(file)) {
+      logInfo('Migration file skipped (already applied)', {
+        event: 'db.migration_file_skip',
+        file
+      });
+      continue;
+    }
+
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
     const statements = splitSqlStatements(sql);
 
@@ -99,9 +129,17 @@ async function runMigrations() {
         throw err;
       }
     }
+
+    await markMigrationApplied(pool, file);
+    appliedMigrations.add(file);
+    appliedCount += 1;
+    logInfo('Migration file recorded', {
+      event: 'db.migration_file_recorded',
+      file
+    });
   }
 
-  logInfo('Migrations applied', { event: 'db.migrations_applied', count: files.length });
+  logInfo('Migrations applied', { event: 'db.migrations_applied', count: appliedCount });
 }
 
 runMigrations()
