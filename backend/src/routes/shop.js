@@ -2,7 +2,13 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
-import { NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
+import {
+  NotFoundError,
+  RequiredFieldError,
+  ValidationError,
+  ConflictError,
+  UnprocessableEntityError
+} from '../utils/errors.js';
 import { isAdvancedSeed, SEED_TYPES } from '../utils/seeds.js';
 import { ensureProfileWithConnection } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
@@ -58,12 +64,12 @@ router.post(
 
       const level = Number.parseInt(profile.level, 10) || 1;
       if (isAdvancedSeed(type) && level < 2) {
-        throw new ValidationError();
+        throw new UnprocessableEntityError('Пользователь не достиг второго уровня');
       }
 
       price = isAdvancedSeed(type) ? config.prices.purchaseAdv : config.prices.purchaseBase;
       if (profile.balance < price) {
-        throw new ValidationError();
+        throw new UnprocessableEntityError('Ты не достаточно богат');
       }
 
       await connection.query('UPDATE profiles SET balance = balance - ? WHERE user_id = ?', [price, req.user.id]);
@@ -121,7 +127,7 @@ router.post(
       }
 
       if (profile.balance < price) {
-        throw new ValidationError();
+        throw new UnprocessableEntityError('Ты не достаточно богат');
       }
 
       const updates = ['balance = balance - ?'];
@@ -187,7 +193,7 @@ router.post(
         throw new NotFoundError('Овощ с указанным идентификатором отсутствует');
       }
       if (item.kind !== 'veg_washed') {
-        throw new ValidationError();
+        throw new ConflictError('Продать возможно только помытый овощ');
       }
       await ensureProfileWithConnection(connection, req.user.id);
       soldType = item.type;
