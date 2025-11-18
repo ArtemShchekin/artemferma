@@ -42,3 +42,9 @@ export class ConflictError extends HttpError {
     super(409, message);
   }
 }
+
+export class UnprocessableEntityError extends HttpError {
+  constructor(message = 'Невозможно обработать запрос') {
+    super(422, message);
+  }
+}
