@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
-import { ConflictError, RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { ConflictError, NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 const router = Router();
@@ -131,11 +131,11 @@ router.patch(
 
       // Мы можем мыть только свежий сырой овощ
       if (!item) {
-        throw new ValidationError();
+        throw new NotFoundError('Овощ с указанным идентификатором отсутствует');
       }
 
       if (item.kind === 'veg_washed') {
-        throw new ConflictError('Данный овощ уже чистый');
+        throw new ConflictError('Данный овощ чистый');
       }
 
       if (item.kind !== 'veg_raw' || item.is_rotten) {
@@ -194,7 +194,11 @@ router.delete(
       );
 
       // Удалять разрешено только протухший сырой овощ
-      if (!item || item.kind !== 'veg_raw' || !item.is_rotten) {
+      if (!item) {
+        throw new NotFoundError('Овощ с указанным идентификатором отсутствует');
+      }
+
+      if (item.kind !== 'veg_raw' || !item.is_rotten) {
         throw new ValidationError();
       }
 

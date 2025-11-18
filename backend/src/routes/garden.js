@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
-import { RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { ConflictError, RequiredFieldError, ValidationError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
@@ -82,8 +82,12 @@ router.post(
         'SELECT * FROM plots WHERE user_id = ? AND slot = ? FOR UPDATE',
         [req.user.id, slotNumber]
       );
-      if (!plot || (plot.type && !plot.harvested)) {
+      if (!plot) {
         throw new ValidationError();
+      }
+
+      if (plot.type && !plot.harvested) {
+        throw new ConflictError('Грядка уже занята');
       }
 
       const [[seed]] = await connection.query(
@@ -145,11 +149,8 @@ router.post(
         'SELECT * FROM plots WHERE user_id = ? AND slot = ? FOR UPDATE',
         [req.user.id, slotNumber]
       );
-      if (!plot || !plot.type || plot.harvested) {
-        throw new ValidationError();
-      }
-      if (!hasMatured(plot.planted_at)) {
-        throw new ValidationError();
+      if (!plot || !plot.type || plot.harvested || !hasMatured(plot.planted_at)) {
+        throw new ConflictError('Овощ ещё совсем зелёный');
       }
 
       await connection.query(
