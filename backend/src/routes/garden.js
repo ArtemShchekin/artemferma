@@ -6,7 +6,7 @@ import config from '../config/index.js';
 import { ConflictError, RequiredFieldError, ValidationError, ServiceUnavailableError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
-import { logApiRequest, logApiResponse } from '../logging/index.js';
+import { logApiRequest, logApiResponse, logInfo } from '../logging/index.js';
 import { requireAdmin } from '../middleware/authorize.js';
 import { getProducer, kafkaAvailable } from '../utils/message-broker.js';
 
@@ -103,6 +103,15 @@ router.post(
           value: JSON.stringify(messagePayload)
         }
       ]
+    });
+
+    logInfo('Задача посадки отправлена в Kafka', {
+      event: 'garden.plant.produced',
+      topic: config.kafka.plantTopic,
+      requestId,
+      userId: req.user.id,
+      slot: slotNumber,
+      inventoryId: inventoryNumber
     });
 
     const response = { accepted: true, requestId };
