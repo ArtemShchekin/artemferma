@@ -1,12 +1,14 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import { asyncHandler } from '../utils/async-handler.js';
 import { withTransaction } from '../db/pool.js';
 import config from '../config/index.js';
-import { ConflictError, RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { ConflictError, RequiredFieldError, ValidationError, ServiceUnavailableError } from '../utils/errors.js';
 import { hasMatured } from '../utils/garden.js';
 import { ensurePlotsInitialized } from '../services/user-setup.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
 import { requireAdmin } from '../middleware/authorize.js';
+import { getProducer, kafkaAvailable } from '../utils/message-broker.js';
 
 
 const router = Router();
@@ -75,48 +77,44 @@ router.post(
       throw new ValidationError();
     }
 
-    let plantedType = null;
+    if (!kafkaAvailable()) {
+      throw new ServiceUnavailableError('Очередь посадки недоступна');
+    }
 
-    await withTransaction(async (connection) => {
-      const [[plot]] = await connection.query(
-        'SELECT * FROM plots WHERE user_id = ? AND slot = ? FOR UPDATE',
-        [req.user.id, slotNumber]
-      );
-      if (!plot) {
-        throw new ValidationError();
-      }
+    const producer = await getProducer();
+    if (!producer) {
+      throw new ServiceUnavailableError('Очередь посадки недоступна');
+    }
 
-      if (plot.type && !plot.harvested) {
-        throw new ConflictError('Грядка уже занята');
-      }
+    const requestId = randomUUID();
+    const messagePayload = {
+      requestId,
+      userId: req.user.id,
+      slot: slotNumber,
+      inventoryId: inventoryNumber,
+      createdAt: new Date().toISOString()
+    };
 
-      const [[seed]] = await connection.query(
-        'SELECT * FROM inventory WHERE id = ? AND user_id = ? FOR UPDATE',
-        [inventoryNumber, req.user.id]
-      );
-      if (!seed || seed.kind !== 'seed') {
-        throw new ValidationError();
-      }
-
-      await connection.query('DELETE FROM inventory WHERE id = ?', [inventoryNumber]);
-      await connection.query(
-        'UPDATE plots SET type = ?, planted_at = NOW(), harvested = 0 WHERE user_id = ? AND slot = ?',
-        [seed.type, req.user.id, slotNumber]
-      );
-
-      plantedType = seed.type;
+    await producer.send({
+      topic: config.kafka.plantTopic,
+      messages: [
+        {
+          key: requestId,
+          value: JSON.stringify(messagePayload)
+        }
+      ]
     });
 
-    const response = { ok: true };
-    res.json(response);
+    const response = { accepted: true, requestId };
+    res.status(202).json(response);
     logApiResponse('Garden seed planted', {
       event: 'garden.plant',
       method: 'POST',
       path: '/api/garden/plant',
       userId: req.user.id,
       slot: slotNumber,
-      seedType: plantedType,
       inventoryId: inventoryNumber,
+      requestId,
       response
     });
   })
