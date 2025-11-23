@@ -43,6 +43,12 @@ export class ConflictError extends HttpError {
   }
 }
 
+export class ServiceUnavailableError extends HttpError {
+  constructor(message = 'Сервис временно недоступен') {
+    super(503, message, { expose: true });
+  }
+}
+
 export class UnprocessableEntityError extends HttpError {
   constructor(message = 'Невозможно обработать запрос') {
     super(422, message);

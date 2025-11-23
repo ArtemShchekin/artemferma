@@ -487,8 +487,18 @@ paths:
                 slot: { type: integer }
                 inventoryId: { type: integer }
       responses:
-        '200': { description: OK }
+        '202':
+          description: Задача посадки принята в очередь
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: boolean }
+                  requestId: { type: string, format: uuid }
+        '400': { description: Ошибка валидации }
         '409': { description: Грядка уже занята }
+        '503': { description: Очередь посадки недоступна }
   /garden/harvest:
     post:
       security: [{ bearerAuth: [] }]

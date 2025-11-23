@@ -33,6 +33,19 @@ const getString = (value, fallback = '') => {
   return trimmed.length ? trimmed : fallback;
 };
 
+const toStringArray = (value, fallback = []) => {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  const items = String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return items.length ? items : fallback;
+};
+
 const config = {
   env: getString(process.env.NODE_ENV, 'development'),
   port: toInt(process.env.PORT, 3000),
@@ -80,6 +93,13 @@ const config = {
     indexRetryAttempts: toInt(process.env.OPENSEARCH_INDEX_RETRY_ATTEMPTS, 24),
     indexRetryDelayMs: toInt(process.env.OPENSEARCH_INDEX_RETRY_DELAY_MS, 5000),
     immediateRefresh: toBool(process.env.OPENSEARCH_IMMEDIATE_REFRESH, true)
+  },
+  kafka: {
+    enabled: toBool(process.env.KAFKA_ENABLED, true),
+    brokers: toStringArray(process.env.KAFKA_BROKERS, ['kafka:9092']),
+    clientId: getString(process.env.KAFKA_CLIENT_ID, 'ferm-backend'),
+    consumerGroup: getString(process.env.KAFKA_CONSUMER_GROUP, 'ferm-plant-consumers'),
+    plantTopic: getString(process.env.KAFKA_PLANT_TOPIC, 'ferm.garden.plant')
   }
 };
 

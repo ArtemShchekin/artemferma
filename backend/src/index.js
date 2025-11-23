@@ -2,10 +2,21 @@ import { createApp } from './app.js';
 import config from './config/index.js';
 import { closePool, ensureDatabaseConnection } from './db/pool.js';
 import { logError, logShutdown, logStartup } from './logging/index.js';
+import { disconnectKafka } from './utils/message-broker.js';
+import { startPlantConsumer, stopPlantConsumer } from './workers/plant-consumer.js';
 
 async function bootstrap() {
   await ensureDatabaseConnection();
-
+  try {
+    await startPlantConsumer();
+  } catch (error) {
+    logError('Failed to start plant consumer', {
+      event: 'startup.consumer_failed',
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
 
   const app = createApp();
   const server = app.listen(config.port, () => {
@@ -15,6 +26,26 @@ async function bootstrap() {
   let shuttingDown = false;
 
   const finishShutdown = async () => {
+    try {
+      await stopPlantConsumer();
+    } catch (error) {
+      logError('Failed to stop plant consumer during shutdown', {
+        event: 'shutdown.consumer_error',
+        error: error.message,
+        stack: error.stack
+      });
+    }
+
+    try {
+      await disconnectKafka();
+    } catch (error) {
+      logError('Failed to disconnect Kafka during shutdown', {
+        event: 'shutdown.kafka_error',
+        error: error.message,
+        stack: error.stack
+      });
+    }
+
     try {
       await closePool();
     } catch (error) {
