@@ -45,6 +45,17 @@ async function handlePlantingMessage(context) {
     return;
   }
 
+  logInfo('Сообщение посадки получено consumer', {
+    event: 'garden.plant.received',
+    topic,
+    partition,
+    offset: message.offset,
+    requestId: payload.requestId,
+    userId: payload.userId,
+    slot: payload.slot,
+    inventoryId: payload.inventoryId
+  });
+
   try {
     const result = await plantSeed({
       userId: payload.userId,
