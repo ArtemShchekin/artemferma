@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Artem Farm">
+  <rect width="64" height="64" rx="12" fill="#0f8558" />
+  <path d="M10 46c6-8 12-12 22-12s16 4 22 12" fill="#c9e6d1" />
+  <path d="M20 36c4-6 8-10 12-12s8-2 12 0" fill="#8fd19e" />
+  <path d="M32 14c-3 2-5 6-5 10 0 3 1 6 3 8h4c2-2 3-5 3-8 0-4-2-8-5-10z" fill="#f4b400" />
+  <circle cx="32" cy="24" r="3" fill="#fbedc2" />
+  <path d="M8 46h48v6H8z" fill="#7c4a1f" />
+  <path d="M10 52h44v4H10z" fill="#6a3b14" />
+</svg>
