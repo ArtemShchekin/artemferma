@@ -32,3 +32,5 @@ endpoint = "http://opensearch:9200"
 index    = "ferm-logs"
 mode     = "bulk"
 compression = "none"
+batch.max_events = 200
+batch.timeout_secs = 5
