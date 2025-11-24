@@ -69,6 +69,7 @@ router.post(
       event: 'auth.register',
       method: 'POST',
       path: '/api/auth/register',
+      status: res.statusCode,
       userId,
       email,
       response
@@ -112,6 +113,7 @@ router.post(
       event: 'auth.login',
       method: 'POST',
       path: '/api/auth/login',
+      status: res.statusCode,
       userId: user.id,
       email,
       response
@@ -154,6 +156,7 @@ router.post(
       event: 'auth.refresh',
       method: 'POST',
       path: '/api/auth/refresh',
+      status: res.statusCode,
       userId: user.id,
       response
     });

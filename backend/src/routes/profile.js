@@ -86,6 +86,7 @@ router.get(
       event: 'profile.get',
       method: 'GET',
       path: '/api/profile',
+      status: res.statusCode,
       userId: req.user.id,
       isCoolFarmer: response.isCoolFarmer,
       level: response.level,
@@ -129,6 +130,7 @@ router.get(
       event: 'profile.getById',
       method: 'GET',
       path: `/api/profile/${userId}`,
+      status: res.statusCode,
       userId: req.user.id,
       requestedUserId: userId,
       response
@@ -218,6 +220,7 @@ router.put(
       event: 'profile.update',
       method: 'PUT',
       path: '/api/profile',
+      status: res.statusCode,
       userId: req.user.id,
       isCoolFarmer,
       mode: isCoolFarmer ? 'cool' : 'regular',

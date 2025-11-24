@@ -203,8 +203,9 @@ export function logApiRequest(message, extra = {}) {
 }
 
 export function logApiResponse(message, extra = {}) {
-  const { request, requestBody, requestQuery, requestParams, ...rest } = extra || {};
-  return logApiStage('response', message, rest);
+  const { request, requestBody, requestQuery, requestParams, status, statusCode, ...rest } = extra || {};
+  const resolvedStatus = status ?? statusCode ?? 200;
+  return logApiStage('response', message, { status: resolvedStatus, ...rest });
 }
 
 export function logApiError(message, extra = {}) {
