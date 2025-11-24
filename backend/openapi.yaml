@@ -199,6 +199,17 @@ components:
             radish: { type: integer, minimum: 0 }
             yogurtMl: { type: integer, minimum: 0 }
             sunflowerOilMl: { type: integer, minimum: 0 }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Ошибка
+        details:
+          description: Дополнительная информация об ошибке.
+          type: object
+          additionalProperties: true
     OkResponse:
       type: object
       required: [ok]
@@ -296,6 +307,9 @@ paths:
               schema: { $ref: '#/components/schemas/Profile' }
         '401':
           description: Требуется авторизация
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
     put:
       security: [{ bearerAuth: [] }]
       summary: Редактирование профиля
@@ -315,6 +329,9 @@ paths:
             Возможные ошибки:
               - «для крутого фермера нужен никнейм и паспорт» — если не переданы оба поля для крутого фермера.
               - «для обычного фермера нужно Ф.И.О.» — если отсутствуют Ф.И.О. для обычного режима.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /profile/{id}:
     get:
       security: [{ bearerAuth: [] }]
@@ -332,6 +349,9 @@ paths:
               schema: { $ref: '#/components/schemas/Profile' }
         '404':
           description: Не найдено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /shop/buy:
     post:
       security: [{ bearerAuth: [] }]
@@ -395,6 +415,9 @@ paths:
               schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /kitchen:
     get:
       security: [{ bearerAuth: [] }]
@@ -422,6 +445,9 @@ paths:
               schema: { $ref: '#/components/schemas/KitchenState' }
         '400':
           description: Ошибка валидации ингредиентов или нехватка продуктов
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /kitchen/salads/eat:
     post:
       security: [{ bearerAuth: [] }]
@@ -474,6 +500,9 @@ paths:
               schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /inventory/wash/{id}:
     patch:
       security: [{ bearerAuth: [] }]
@@ -492,8 +521,14 @@ paths:
               schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
         '409':
           description: Данный овощ чистый
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/plots:
     get:
       security: [{ bearerAuth: [] }]
@@ -529,9 +564,21 @@ paths:
                 properties:
                   accepted: { type: boolean }
                   requestId: { type: string, format: uuid }
-        '400': { description: Ошибка валидации }
-        '409': { description: Грядка уже занята }
-        '503': { description: Очередь посадки недоступна }
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Грядка уже занята
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '503':
+          description: Очередь посадки недоступна
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/harvest:
     post:
       security: [{ bearerAuth: [] }]
@@ -551,7 +598,11 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
-        '409': { description: 'Овощ ещё совсем зелёный' }
+        '409':
+          description: 'Овощ ещё совсем зелёный'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/uproot/{slot}:
     delete:
       security: [{ bearerAuth: [] }]
@@ -567,4 +618,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
-        '403': { description: Forbidden }
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
