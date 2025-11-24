@@ -88,6 +88,7 @@ router.get(
       event: 'inventory.list',
       method: 'GET',
       path: '/api/inventory',
+      status: res.statusCode,
       userId: req.user.id,
       seeds: seeds.length,
       vegRaw: vegRaw.length,
@@ -155,6 +156,7 @@ router.patch(
       event: 'inventory.wash',
       method: 'PATCH',
       path: `/api/inventory/wash/${paramId}`,
+      status: res.statusCode,
       userId: req.user.id,
       inventoryId: Number(paramId),
       response
@@ -212,6 +214,7 @@ router.delete(
       event: 'inventory.delete',
       method: 'DELETE',
       path: `/api/inventory/${paramId}`,
+      status: res.statusCode,
       userId: req.user.id,
       inventoryId: Number(paramId),
       response

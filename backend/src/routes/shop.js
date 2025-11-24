@@ -33,6 +33,7 @@ router.get(
       event: 'shop.prices',
       method: 'GET',
       path: '/api/shop/prices',
+      status: res.statusCode,
       userId: req.user.id,
       response
     });
@@ -85,6 +86,7 @@ router.post(
       event: 'shop.buy',
       method: 'POST',
       path: '/api/shop/buy',
+      status: res.statusCode,
       userId: req.user.id,
       type,
       price,
@@ -152,6 +154,7 @@ router.post(
       event: 'shop.buySupply',
       method: 'POST',
       path: '/api/shop/buy-supply',
+      status: res.statusCode,
       userId: req.user.id,
       supply,
       price,
@@ -216,6 +219,7 @@ router.post(
       event: 'shop.sell',
       method: 'POST',
       path: '/api/shop/sell',
+      status: res.statusCode,
       userId: req.user.id,
       inventoryId: id,
       type: soldType,

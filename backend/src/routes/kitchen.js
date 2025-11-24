@@ -108,6 +108,7 @@ router.get(
       event: 'kitchen.get',
       method: 'GET',
       path: '/api/kitchen',
+      status: res.statusCode,
       userId: req.user.id,
       response: state
     });
@@ -224,6 +225,7 @@ router.post(
       event: 'kitchen.prepareSalad',
       method: 'POST',
       path: '/api/kitchen/salads',
+      status: res.statusCode,
       userId: req.user.id,
       recipe,
       response: state
@@ -260,6 +262,7 @@ router.post(
       event: 'kitchen.eatSalad',
       method: 'POST',
       path: '/api/kitchen/salads/eat',
+      status: res.statusCode,
       userId: req.user.id,
       response: state
     });
