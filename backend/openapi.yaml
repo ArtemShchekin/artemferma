@@ -199,6 +199,21 @@ components:
             radish: { type: integer, minimum: 0 }
             yogurtMl: { type: integer, minimum: 0 }
             sunflowerOilMl: { type: integer, minimum: 0 }
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          example: true
+    SupplyPurchaseResponse:
+      allOf:
+        - $ref: '#/components/schemas/OkResponse'
+        - type: object
+          required: [price, volume]
+          properties:
+            price: { type: integer }
+            volume: { type: integer }
     InventoryItem:
       type: object
       properties:
@@ -292,6 +307,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
         '400':
           description: |
             Возможные ошибки:
@@ -332,6 +350,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
   /shop/buy-supply:
     post:
       security: [{ bearerAuth: [] }]
@@ -350,6 +371,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupplyPurchaseResponse' }
   /shop/sell:
     post:
       security: [{ bearerAuth: [] }]
@@ -366,6 +390,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
   /kitchen:
@@ -442,6 +469,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
   /inventory/wash/{id}:
@@ -457,6 +487,9 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
         '404':
           description: Овощ с указанным идентификатором отсутствует
         '409':
@@ -513,7 +546,11 @@ paths:
               properties:
                 slot: { type: integer }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
         '409': { description: 'Овощ ещё совсем зелёный' }
   /garden/uproot/{slot}:
     delete:
@@ -525,5 +562,9 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
         '403': { description: Forbidden }
