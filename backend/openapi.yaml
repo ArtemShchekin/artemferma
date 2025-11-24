@@ -267,6 +267,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuthRegisterResp' }
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                refreshToken: dGhpc0lzQW5FbmNyeXB0ZWRSZWZyZXNoVG9rZW4
+                message: Пользователь успешно зарегистрирован
   /auth/login:
     post:
       summary: Логин
@@ -281,6 +285,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuthTokens' }
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                refreshToken: c29tZVNhbXBsZVJlZnJlc2hUb2tlbg
   /auth/refresh:
     post:
       summary: Обновить токены
@@ -295,6 +302,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuthTokens' }
+              example:
+                accessToken: ZXhhbXBsZUFjY2Vzc1Rva2Vu
+                refreshToken: ZXhhbXBsZVJlZnJlc2hUb2tlbg
   /profile:
     get:
       security: [{ bearerAuth: [] }]
@@ -305,11 +315,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Profile' }
+              example:
+                id: 1
+                isCoolFarmer: true
+                isAdmin: false
+                firstName: Иван
+                lastName: Иванов
+                middleName: Иванович
+                nickname: cool_farmer
+                passport: 1234 567890
+                level: 2
+                soldCount: 7
+                balance: 1250
+                yogurtMl: 300
+                sunflowerOilMl: 450
+                saladsEaten: 9
+                isFatFarmer: false
+                prices:
+                  purchase:
+                    basePrice: 50
+                    advPrice: 70
+                  sale:
+                    basePrice: 40
+                    advPrice: 60
+                  supplies:
+                    yogurt:
+                      price: 120
+                      volume: 500
+                    sunflowerOil:
+                      price: 90
+                      volume: 400
         '401':
           description: Требуется авторизация
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
     put:
       security: [{ bearerAuth: [] }]
       summary: Редактирование профиля
@@ -324,14 +361,41 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Profile' }
+              example:
+                id: 1
+                isCoolFarmer: false
+                isAdmin: false
+                firstName: Ольга
+                lastName: Смирнова
+                middleName: Сергеевна
+                nickname: null
+                passport: null
+                level: 1
+                soldCount: 2
+                balance: 900
+                yogurtMl: 150
+                sunflowerOilMl: 200
+                saladsEaten: 3
+                isFatFarmer: false
+                prices:
+                  purchase:
+                    basePrice: 50
+                    advPrice: 70
+                  sale:
+                    basePrice: 40
+                    advPrice: 60
+                  supplies:
+                    yogurt:
+                      price: 120
+                      volume: 500
+                    sunflowerOil:
+                      price: 90
+                      volume: 400
         '400':
           description: |
             Возможные ошибки:
               - «для крутого фермера нужен никнейм и паспорт» — если не переданы оба поля для крутого фермера.
               - «для обычного фермера нужно Ф.И.О.» — если отсутствуют Ф.И.О. для обычного режима.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /profile/{id}:
     get:
       security: [{ bearerAuth: [] }]
@@ -347,11 +411,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Profile' }
+              example:
+                id: 2
+                isCoolFarmer: true
+                isAdmin: false
+                firstName: null
+                lastName: null
+                middleName: null
+                nickname: фермерша
+                passport: 5678 123456
+                level: 1
+                soldCount: 0
+                balance: 500
+                yogurtMl: 200
+                sunflowerOilMl: 120
+                saladsEaten: 1
+                isFatFarmer: false
+                prices:
+                  purchase:
+                    basePrice: 50
+                    advPrice: 70
+                  sale:
+                    basePrice: 40
+                    advPrice: 60
+                  supplies:
+                    yogurt:
+                      price: 120
+                      volume: 500
+                    sunflowerOil:
+                      price: 90
+                      volume: 400
         '404':
           description: Не найдено
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /shop/buy:
     post:
       security: [{ bearerAuth: [] }]
@@ -373,6 +464,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
   /shop/buy-supply:
     post:
       security: [{ bearerAuth: [] }]
@@ -394,6 +487,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SupplyPurchaseResponse' }
+              example:
+                ok: true
+                price: 120
+                volume: 500
   /shop/sell:
     post:
       security: [{ bearerAuth: [] }]
@@ -413,11 +510,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
         '404':
           description: Овощ с указанным идентификатором отсутствует
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /kitchen:
     get:
       security: [{ bearerAuth: [] }]
@@ -428,6 +524,17 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/KitchenState' }
+              example:
+                vegetables:
+                  mango: 1
+                  carrot: 3
+                  cabbage: 0
+                  radish: 2
+                yogurtMl: 250
+                sunflowerOilMl: 180
+                saladsEaten: 5
+                preparedSalads: 1
+                isFatFarmer: false
   /kitchen/salads:
     post:
       security: [{ bearerAuth: [] }]
@@ -443,11 +550,19 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/KitchenState' }
+              example:
+                vegetables:
+                  mango: 0
+                  carrot: 2
+                  cabbage: 1
+                  radish: 1
+                yogurtMl: 100
+                sunflowerOilMl: 120
+                saladsEaten: 6
+                preparedSalads: 2
+                isFatFarmer: false
         '400':
           description: Ошибка валидации ингредиентов или нехватка продуктов
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /kitchen/salads/eat:
     post:
       security: [{ bearerAuth: [] }]
@@ -458,6 +573,17 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/KitchenState' }
+              example:
+                vegetables:
+                  mango: 0
+                  carrot: 1
+                  cabbage: 1
+                  radish: 0
+                yogurtMl: 50
+                sunflowerOilMl: 80
+                saladsEaten: 7
+                preparedSalads: 0
+                isFatFarmer: false
   /inventory:
     get:
       security: [{ bearerAuth: [] }]
@@ -482,6 +608,35 @@ paths:
                   vegRotten:
                     type: array
                     items: { $ref: '#/components/schemas/InventoryItem' }
+              example:
+                seeds:
+                  - id: 1
+                    kind: seed
+                    type: carrot
+                    status: stored
+                    createdAt: '2024-06-01T12:00:00Z'
+                    isRotten: false
+                vegRaw:
+                  - id: 2
+                    kind: veg_raw
+                    type: radish
+                    status: harvested
+                    createdAt: '2024-06-02T09:00:00Z'
+                    isRotten: false
+                vegWashed:
+                  - id: 3
+                    kind: veg_washed
+                    type: cabbage
+                    status: washed
+                    createdAt: '2024-06-02T10:00:00Z'
+                    isRotten: false
+                vegRotten:
+                  - id: 4
+                    kind: veg_raw
+                    type: mango
+                    status: rotten
+                    createdAt: '2024-05-30T08:00:00Z'
+                    isRotten: true
   /inventory/{id}:
     delete:
       security: [{ bearerAuth: [] }]
@@ -498,11 +653,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
         '404':
           description: Овощ с указанным идентификатором отсутствует
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /inventory/wash/{id}:
     patch:
       security: [{ bearerAuth: [] }]
@@ -519,16 +673,12 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
         '404':
           description: Овощ с указанным идентификатором отсутствует
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
         '409':
           description: Данный овощ чистый
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/plots:
     get:
       security: [{ bearerAuth: [] }]
@@ -539,6 +689,20 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/GardenPlotsResponse' }
+              example:
+                plots:
+                  - slot: 1
+                    type: carrot
+                    plantedAt: '2024-06-02T08:00:00Z'
+                    matured: true
+                    harvested: false
+                  - slot: 2
+                    type: mango
+                    plantedAt: '2024-06-02T08:10:00Z'
+                    matured: false
+                    harvested: false
+                growthMinutes: 30
+                canUproot: false
           
   /garden/plant:
     post:
@@ -557,28 +721,12 @@ paths:
       responses:
         '202':
           description: Задача посадки принята в очередь
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  accepted: { type: boolean }
-                  requestId: { type: string, format: uuid }
         '400':
           description: Ошибка валидации
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
         '409':
           description: Грядка уже занята
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
         '503':
           description: Очередь посадки недоступна
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/harvest:
     post:
       security: [{ bearerAuth: [] }]
@@ -598,11 +746,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
         '409':
           description: 'Овощ ещё совсем зелёный'
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /garden/uproot/{slot}:
     delete:
       security: [{ bearerAuth: [] }]
@@ -618,8 +765,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OkResponse' }
+              example:
+                ok: true
         '403':
           description: Forbidden
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
