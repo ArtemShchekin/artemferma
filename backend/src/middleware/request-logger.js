@@ -1,24 +1,8 @@
 import { logHttpEvent } from '../logging/index.js';
 import { redactProfilePayload, shouldRedactProfileLogs } from '../utils/redact.js';
 
-function computeBaseCode(method, path) {
-  const key = `${(method || '').toUpperCase()} ${(path || '').trim()}`;
-  let hash = 0;
-
-  for (let index = 0; index < key.length; index += 1) {
-    hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
-  }
-
-  return (hash % 8999) + 1;
-}
-
-function resolveRequestCodes(method, path) {
-  const baseCode = computeBaseCode(method, path);
-  return {
-    CodeRequest: 1000 + baseCode,
-    CodeResponse: 2000 + baseCode
-  };
-}
+const REQUEST_CODE = 1010;
+const RESPONSE_CODE = 2010;
 
 function serializeForLog(value, { allowEmptyObject = false } = {}) {
   if (value === undefined || value === null) {
@@ -98,7 +82,6 @@ export function requestLogger(req, res, next) {
 
   const originalUrl = req.originalUrl || req.url || '';
   const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
-  const requestCodes = resolveRequestCodes(req.method, normalizedPath);
   const shouldRedactProfile = shouldRedactProfileLogs(req.method, normalizedPath);
 
 
@@ -132,8 +115,7 @@ export function requestLogger(req, res, next) {
   if (baseRequestPayload) {
     requestPayload = {
       ...baseRequestPayload,
-      CodeRequest: requestCodes.CodeRequest,
-      CodeResponse: requestCodes.CodeResponse
+      CodeRequest: REQUEST_CODE
     };
 
     const bodyForLogging = shouldRedactProfile ? redactProfilePayload(req.body) : req.body;
@@ -183,8 +165,7 @@ export function requestLogger(req, res, next) {
         status: res.statusCode,
         durationMs,
         responseBody: responseBody ?? null,
-        CodeRequest: requestCodes.CodeRequest,
-        CodeResponse: requestCodes.CodeResponse
+        CodeResponse: RESPONSE_CODE
       };
 
       const result = logHttpEvent('ClientsGatewayResponse', combinedPayload);
