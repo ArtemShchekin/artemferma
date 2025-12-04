@@ -102,7 +102,7 @@ const config = {
     plantTopic: getString(process.env.KAFKA_PLANT_TOPIC, 'ferm.garden.plant')
   },
   email: {
-    enabled: toBool(process.env.EMAIL_ENABLED, false),
+    enabled: toBool(process.env.EMAIL_ENABLED, true),
     host: getString(process.env.EMAIL_HOST, 'smtp'),
     port: toInt(process.env.EMAIL_PORT, 1025),
     secure: toBool(process.env.EMAIL_SECURE, undefined),
