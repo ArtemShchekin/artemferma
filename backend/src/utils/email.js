@@ -6,10 +6,11 @@ let transporter;
 
 function buildTransportOptions() {
   const authMissing = !config.email.user || !config.email.password;
+  const secure = config.email.secure ?? config.email.port === 465;
   const baseOptions = {
     host: config.email.host,
     port: config.email.port,
-    secure: config.email.secure
+    secure
   };
 
   if (!authMissing) {

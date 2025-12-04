@@ -105,7 +105,7 @@ const config = {
     enabled: toBool(process.env.EMAIL_ENABLED, false),
     host: getString(process.env.EMAIL_HOST, 'smtp'),
     port: toInt(process.env.EMAIL_PORT, 1025),
-    secure: toBool(process.env.EMAIL_SECURE, false),
+    secure: toBool(process.env.EMAIL_SECURE, undefined),
     user: getString(process.env.EMAIL_USER),
     password: getString(process.env.EMAIL_PASSWORD),
     from: getString(process.env.EMAIL_FROM, 'no-reply@ferma.local')
