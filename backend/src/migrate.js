@@ -67,44 +67,27 @@ function isIgnorableMigrationError(err, statement) {
   return false;
 }
 
-async function ensureMigrationsRegistry(pool) {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      filename VARCHAR(255) NOT NULL UNIQUE,
-      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
-
-async function loadAppliedMigrations(pool) {
-  const [rows] = await pool.query('SELECT filename FROM schema_migrations');
-  return new Set(rows.map(row => row.filename));
-}
-
-async function markMigrationApplied(pool, file) {
-  await pool.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
-}
-
 async function runMigrations() {
   await ensureDatabaseConnection();
   const migrationsDir = fileURLToPath(new URL('../migrations', import.meta.url));
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
   const pool = getPool();
-  await ensureMigrationsRegistry(pool);
-  const appliedMigrations = await loadAppliedMigrations(pool);
+  try {
+    await pool.query('DROP TABLE IF EXISTS schema_migrations');
+    logInfo('Legacy migration registry table dropped', { event: 'db.schema_migrations_dropped' });
+  } catch (err) {
+    logError('Failed to drop legacy migration registry table', {
+      event: 'db.schema_migrations_drop_failed',
+      error: err.message,
+      stack: err.stack
+    });
+    throw err;
+  }
+
   let appliedCount = 0;
 
   for (const file of files) {
-    if (appliedMigrations.has(file)) {
-      logInfo('Migration file skipped (already applied)', {
-        event: 'db.migration_file_skip',
-        file
-      });
-      continue;
-    }
-
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
     const statements = splitSqlStatements(sql);
 
@@ -130,11 +113,9 @@ async function runMigrations() {
       }
     }
 
-    await markMigrationApplied(pool, file);
-    appliedMigrations.add(file);
     appliedCount += 1;
-    logInfo('Migration file recorded', {
-      event: 'db.migration_file_recorded',
+    logInfo('Migration file executed', {
+      event: 'db.migration_file_executed',
       file
     });
   }
