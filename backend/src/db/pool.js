@@ -100,7 +100,8 @@ function buildLogPayload(sql, params) {
   const operation = detectOperation(sql);
   const payload = {
     event: 'db.query',
-    sql: normalizeSql(sql)
+    sql: normalizeSql(sql),
+    skipIntegrationName: true
   };
 
   const sanitizedParams = sanitizeParams(params);
