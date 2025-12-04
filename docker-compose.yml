@@ -119,6 +119,13 @@ services:
       KAFKA_CLIENT_ID: ferm-backend
       KAFKA_CONSUMER_GROUP: ferm-plant-consumers
       KAFKA_PLANT_TOPIC: ferm.garden.plant
+      EMAIL_ENABLED: "true"
+      EMAIL_HOST: "smtp.yandex.ru"
+      EMAIL_PORT: "465"
+      EMAIL_SECURE: "true"
+      EMAIL_USER: "nkmchs88@yandex.ru"
+      EMAIL_PASSWORD: "ektsnuviwpkkhzrr"
+      EMAIL_FROM: "Ферма Артёма <nkmchs88@yandex.ru>"
     depends_on:
       mysql:
         condition: service_healthy
