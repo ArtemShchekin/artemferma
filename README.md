@@ -22,6 +22,7 @@ docker compose up --build
 
 - UI фермы — <http://localhost>
 - Swagger UI — <http://localhost/api/docs>
+- Почта (MailHog) — <http://localhost:8025>
 - OpenSearch Dashboards — <http://localhost/opensearch>
 - Kafka UI — <http://localhost:8080>
 
@@ -38,6 +39,7 @@ docker compose up --build
 | zookeeper | Координация Kafka | 2181 | 2181 |
 | kafka | Брокер сообщений для очереди посадки | 9092/29092 | 9092/29092 |
 | kafka-ui | UI для просмотра топиков Kafka | 8080 | 8080 |
+| mailhog | Тестовая SMTP-песочница и веб-интерфейс писем | 1025/8025 | 1025/8025 |
 | backend | REST API и миграции | 3000 | 3000 |
 | frontend | Статическая сборка SPA | 80 | 5173 |
 | nginx | Reverse proxy и единая точка входа | 80 | 80 |

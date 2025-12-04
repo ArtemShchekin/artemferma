@@ -119,12 +119,19 @@ services:
       KAFKA_CLIENT_ID: ferm-backend
       KAFKA_CONSUMER_GROUP: ferm-plant-consumers
       KAFKA_PLANT_TOPIC: ferm.garden.plant
+      EMAIL_ENABLED: "true"
+      EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_SECURE: "false"
+      EMAIL_FROM: no-reply@ferma.local
     depends_on:
       mysql:
         condition: service_healthy
       opensearch:
         condition: service_healthy
       kafka:
+        condition: service_started
+      mailhog:
         condition: service_started
     ports:
       - "3000:3000"
@@ -147,6 +154,14 @@ services:
         condition: service_healthy
     ports:
       - "5173:80"
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: ferm-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     restart: unless-stopped
 
   nginx:
