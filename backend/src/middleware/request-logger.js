@@ -130,7 +130,11 @@ export function requestLogger(req, res, next) {
 
   let requestPayload = null;
   if (baseRequestPayload) {
-    requestPayload = { ...baseRequestPayload, CodeRequest: requestCodes.CodeRequest };
+    requestPayload = {
+      ...baseRequestPayload,
+      CodeRequest: requestCodes.CodeRequest,
+      CodeResponse: requestCodes.CodeResponse
+    };
 
     const bodyForLogging = shouldRedactProfile ? redactProfilePayload(req.body) : req.body;
     const requestBody = serializeForLog(bodyForLogging, { allowEmptyObject: true });
@@ -179,6 +183,7 @@ export function requestLogger(req, res, next) {
         status: res.statusCode,
         durationMs,
         responseBody: responseBody ?? null,
+        CodeRequest: requestCodes.CodeRequest,
         CodeResponse: requestCodes.CodeResponse
       };
 
