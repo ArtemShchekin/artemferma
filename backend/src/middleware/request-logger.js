@@ -1,6 +1,25 @@
 import { logHttpEvent } from '../logging/index.js';
 import { redactProfilePayload, shouldRedactProfileLogs } from '../utils/redact.js';
 
+function computeBaseCode(method, path) {
+  const key = `${(method || '').toUpperCase()} ${(path || '').trim()}`;
+  let hash = 0;
+
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+  }
+
+  return (hash % 8999) + 1;
+}
+
+function resolveRequestCodes(method, path) {
+  const baseCode = computeBaseCode(method, path);
+  return {
+    CodeRequest: 1000 + baseCode,
+    CodeResponse: 2000 + baseCode
+  };
+}
+
 function serializeForLog(value, { allowEmptyObject = false } = {}) {
   if (value === undefined || value === null) {
     return null;
@@ -79,6 +98,7 @@ export function requestLogger(req, res, next) {
 
   const originalUrl = req.originalUrl || req.url || '';
   const normalizedPath = typeof originalUrl === 'string' ? originalUrl.split('?')[0] : '';
+  const requestCodes = resolveRequestCodes(req.method, normalizedPath);
   const shouldRedactProfile = shouldRedactProfileLogs(req.method, normalizedPath);
 
 
@@ -110,7 +130,7 @@ export function requestLogger(req, res, next) {
 
   let requestPayload = null;
   if (baseRequestPayload) {
-    requestPayload = { ...baseRequestPayload };
+    requestPayload = { ...baseRequestPayload, CodeRequest: requestCodes.CodeRequest };
 
     const bodyForLogging = shouldRedactProfile ? redactProfilePayload(req.body) : req.body;
     const requestBody = serializeForLog(bodyForLogging, { allowEmptyObject: true });
@@ -147,19 +167,19 @@ export function requestLogger(req, res, next) {
       const responseBody = shouldRedactProfile ? redactProfilePayload(capturedResponse) : capturedResponse;
 
       const combinedPayload = {
-        ...((requestPayload && {
-          ...requestPayload,
-          userId,
-          ip
-        }) || {
+        ...(((requestPayload && (() => {
+          const { CodeRequest: _CodeRequest, ...rest } = requestPayload;
+          return { ...rest, userId, ip };
+        })()) || {
           method: req.method,
           path: originalUrl,
           userId,
           ip
-        }),
+        })),
         status: res.statusCode,
         durationMs,
-        responseBody: responseBody ?? null
+        responseBody: responseBody ?? null,
+        CodeResponse: requestCodes.CodeResponse
       };
 
       const result = logHttpEvent('ClientsGatewayResponse', combinedPayload);
