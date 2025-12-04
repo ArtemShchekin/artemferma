@@ -99,7 +99,9 @@ const config = {
     brokers: toStringArray(process.env.KAFKA_BROKERS, ['kafka:9092']),
     clientId: getString(process.env.KAFKA_CLIENT_ID, 'ferm-backend'),
     consumerGroup: getString(process.env.KAFKA_CONSUMER_GROUP, 'ferm-plant-consumers'),
-    plantTopic: getString(process.env.KAFKA_PLANT_TOPIC, 'ferm.garden.plant')
+    plantTopic: getString(process.env.KAFKA_PLANT_TOPIC, 'ferm.garden.plant'),
+    maturityTopic: getString(process.env.KAFKA_MATURITY_TOPIC, 'ferm.garden.maturity'),
+    maturityConsumerGroup: getString(process.env.KAFKA_MATURITY_GROUP, 'ferm-maturity-consumers')
   },
   email: {
     enabled: toBool(process.env.EMAIL_ENABLED, true),
