@@ -165,7 +165,9 @@ router.post(
       }
 
       await connection.query(
-        'UPDATE plots SET harvested = 1, type = NULL, planted_at = NULL WHERE user_id = ? AND slot = ?',
+        `UPDATE plots
+         SET harvested = 1, type = NULL, planted_at = NULL, matured_notified = 0
+         WHERE user_id = ? AND slot = ?`,
         [req.user.id, slotNumber]
       );
       await connection.query(
@@ -223,7 +225,9 @@ router.delete(
       }
 
       await connection.query(
-        'UPDATE plots SET harvested = 0, type = NULL, planted_at = NULL WHERE user_id = ? AND slot = ?',
+        `UPDATE plots
+         SET harvested = 0, type = NULL, planted_at = NULL, matured_notified = 0
+         WHERE user_id = ? AND slot = ?`,
         [req.user.id, slotNumber]
       );
 
