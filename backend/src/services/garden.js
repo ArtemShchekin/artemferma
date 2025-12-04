@@ -38,7 +38,9 @@ export async function plantSeed({ userId, slot, inventoryId }) {
 
     await connection.query('DELETE FROM inventory WHERE id = ?', [inventoryNumber]);
     await connection.query(
-      'UPDATE plots SET type = ?, planted_at = NOW(), harvested = 0 WHERE user_id = ? AND slot = ?',
+      `UPDATE plots
+       SET type = ?, planted_at = NOW(), harvested = 0, matured_notified = 0
+       WHERE user_id = ? AND slot = ?`,
       [seed.type, userId, slotNumber]
     );
 
