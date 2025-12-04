@@ -103,7 +103,7 @@ const config = {
   },
   email: {
     enabled: toBool(process.env.EMAIL_ENABLED, true),
-    host: getString(process.env.EMAIL_HOST, 'smtp'),
+    host: getString(process.env.EMAIL_HOST, 'mailhog'),
     port: toInt(process.env.EMAIL_PORT, 1025),
     secure: toBool(process.env.EMAIL_SECURE, undefined),
     user: getString(process.env.EMAIL_USER),
