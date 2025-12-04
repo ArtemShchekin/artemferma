@@ -77,6 +77,8 @@ async function createIndexWithRetry(osClient) {
                 requestParams: { type: 'text' },
                 stack: { type: 'text' },
                 responseBody: { type: 'text' },
+                CodeRequest: { type: 'integer' },
+                CodeResponse: { type: 'integer' },
                 IntegrationName: { type: 'keyword' }
               }
             }
