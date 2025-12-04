@@ -21,6 +21,8 @@ if exists(.time) {
   if err == null { .["@timestamp"] = ts }
 }
 
+.IntegrationName = "Ferma"
+
 .source = "nginx"
 '''
 
