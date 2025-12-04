@@ -1,7 +1,8 @@
+import { randomUUID } from 'crypto';
 import config from '../config/index.js';
 import { query } from '../db/pool.js';
 import { logError, logInfo } from '../logging/index.js';
-import { sendEmail } from '../utils/email.js';
+import { getProducer, kafkaAvailable } from '../utils/message-broker.js';
 
 let timer;
 let isRunning = false;
@@ -22,22 +23,52 @@ async function fetchMaturePlots() {
   return rows;
 }
 
-async function markAsNotified(userId, slot) {
-  await query('UPDATE plots SET matured_notified = 1 WHERE user_id = ? AND slot = ?', [userId, slot]);
-}
-
 async function notifyPlot(plot) {
-  const subject = 'Овощ созрел!';
-  const text = `Ваш урожай "${plot.type}" на грядке #${plot.slot} готов к сбору.`;
-
-  const delivered = await sendEmail({ to: plot.email, subject, text });
-  if (!delivered) {
+  if (!kafkaAvailable()) {
+    logError('Kafka отключена, невозможно поставить уведомление в очередь', {
+      event: 'garden.maturity.kafka_disabled',
+      userId: plot.userId,
+      slot: plot.slot,
+      type: plot.type
+    });
     return false;
   }
 
-  await markAsNotified(plot.userId, plot.slot);
-  logInfo('Maturity notification delivered', {
-    event: 'garden.maturity.notified',
+  const producer = await getProducer();
+  if (!producer) {
+    logError('Kafka producer недоступен, уведомление не отправлено в очередь', {
+      event: 'garden.maturity.kafka_unavailable',
+      userId: plot.userId,
+      slot: plot.slot,
+      type: plot.type
+    });
+    return false;
+  }
+
+  const requestId = randomUUID();
+  const messagePayload = {
+    requestId,
+    userId: plot.userId,
+    slot: plot.slot,
+    type: plot.type,
+    email: plot.email,
+    createdAt: new Date().toISOString()
+  };
+
+  await producer.send({
+    topic: config.kafka.maturityTopic,
+    messages: [
+      {
+        key: requestId,
+        value: JSON.stringify(messagePayload)
+      }
+    ]
+  });
+
+  logInfo('Уведомление о созревании поставлено в очередь', {
+    event: 'garden.maturity.produced',
+    topic: config.kafka.maturityTopic,
+    requestId,
     userId: plot.userId,
     slot: plot.slot,
     type: plot.type
@@ -94,6 +125,13 @@ export function startMaturityNotifier() {
   if (!config.email.enabled) {
     logInfo('Email notifications disabled, maturity notifier not started', {
       event: 'garden.maturity.notifier.disabled'
+    });
+    return null;
+  }
+
+  if (!kafkaAvailable()) {
+    logInfo('Kafka disabled, maturity notifier not started', {
+      event: 'garden.maturity.notifier.kafka_disabled'
     });
     return null;
   }

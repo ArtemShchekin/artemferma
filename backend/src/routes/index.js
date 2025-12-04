@@ -6,6 +6,7 @@ import inventoryRouter from './inventory.js';
 import gardenRouter from './garden.js';
 import kitchenRouter from './kitchen.js';
 import localizationRouter from './localization.js';
+import emailRouter from './email.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 router.use('/localization', localizationRouter);
+router.use(emailRouter);
 router.use(authenticate);
 router.use('/profile', profileRouter);
 router.use('/shop', shopRouter);
