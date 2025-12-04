@@ -151,6 +151,21 @@ async function sendToOpenSearch(body) {
   }
 }
 
+function withIntegrationName(extra = {}) {
+  const payload = extra ? { ...extra } : {};
+
+  if (payload.skipIntegrationName) {
+    delete payload.skipIntegrationName;
+    return payload;
+  }
+
+  if (!payload.IntegrationName) {
+    payload.IntegrationName = 'Ferma';
+  }
+
+  return payload;
+}
+
 function baseDocument(level, message, extra = {}) {
   return {
     '@timestamp': new Date().toISOString(),
@@ -161,8 +176,9 @@ function baseDocument(level, message, extra = {}) {
 }
 
 function logAndSend(level, message, extra) {
-  printToConsole(level, message, extra);
-  const body = baseDocument(level, message, extra ?? {});
+  const payload = withIntegrationName(extra ?? {});
+  printToConsole(level, message, payload);
+  const body = baseDocument(level, message, payload);
   return sendToOpenSearch(body);
 }
 
@@ -213,15 +229,13 @@ export function logApiError(message, extra = {}) {
 }
 
 export function logHttpEvent(eventName, extra) {
-  const payload = {
+  const payload = withIntegrationName({
     event: 'http_event',
     'event.eventname': eventName,
     ...extra
-  };
-  printToConsole('info', 'http_event', payload);
-  const body = baseDocument('info', 'http_event', payload);
+  });
 
-  return sendToOpenSearch(body);
+  return logAndSend('info', 'http_event', payload);
 }
 
 export function logStartup(extra = {}) {

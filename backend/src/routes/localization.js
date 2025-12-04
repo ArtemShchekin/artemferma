@@ -3,8 +3,7 @@ const router = express.Router();
 
 router.post('/1', (_req, res) => {
   res.status(400).json({
-    error: 'Некорректные данные',
-    message: 'Поля login и password обязательны для заполнения'
+    error: 'Некорректные данные'
   });
 });
 
@@ -17,14 +16,12 @@ router.post('/2', (req, res) => {
 
   if (typeof login === 'string' && typeof pass === 'string' && typeof password === 'undefined') {
     return res.status(400).json({
-      error: 'Некорректное тело запроса',
-      message: 'Ожидалось поле password, но получено pass.'
+      error: 'Некорректное тело запроса'
     });
   }
 
   return res.status(400).json({
-    error: 'Некорректные данные',
-    message: 'Поля login и password обязательны для заполнения'
+    error: 'Некорректные данные'
   });
 });
 
@@ -32,8 +29,7 @@ router.post('/2', (req, res) => {
 router.post('/3', (_req, res) => {
   setTimeout(() => {
     res.status(504).json({
-      error: 'Gateway Timeout',
-      message: 'Сервер не успел обработать запрос и вернул 504 ошибку'
+      error: 'Gateway Timeout'
     });
   }, 8000);
 });

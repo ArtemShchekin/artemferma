@@ -61,6 +61,7 @@ router.post(
       event: 'garden.plant',
       method: 'POST',
       path: '/api/garden/plant',
+      IntegrationName: 'Clients',
       userId: req.user.id,
       slot: slot ?? null,
       inventoryId: inventoryId ?? null
@@ -122,6 +123,7 @@ router.post(
       method: 'POST',
       path: '/api/garden/plant',
       status: res.statusCode,
+      IntegrationName: 'Clients',
       userId: req.user.id,
       slot: slotNumber,
       inventoryId: inventoryNumber,
