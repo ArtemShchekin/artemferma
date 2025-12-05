@@ -140,7 +140,14 @@ export async function startMaturityConsumer() {
   }
 
   await consumer.subscribe({ topic: config.kafka.maturityTopic, fromBeginning: false });
-  await consumer.run({ eachMessage: createMaturityHandler() });
+
+  consumer.run({ eachMessage: createMaturityHandler() }).catch((error) => {
+    logError('Consumer созревания остановился с ошибкой', {
+      event: 'garden.maturity.consumer.crashed',
+      error: error.message,
+      stack: error.stack
+    });
+  });
 
   logInfo('Consumer созревания запущен', {
     event: 'garden.maturity.consumer.started',
