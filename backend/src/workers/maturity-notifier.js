@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import config from '../config/index.js';
 import { query } from '../db/pool.js';
 import { logError, logInfo } from '../logging/index.js';
+import { sendMaturityEmail } from '../services/maturity.js';
 import { getProducer, kafkaAvailable } from '../utils/message-broker.js';
 
 let timer;
@@ -24,50 +25,77 @@ async function fetchMaturePlots() {
 }
 
 async function notifyPlot(plot) {
-  if (!kafkaAvailable()) {
-    logError('Kafka отключена, невозможно поставить уведомление в очередь', {
+  const requestId = randomUUID();
+
+  if (kafkaAvailable()) {
+    const producer = await getProducer();
+    if (producer) {
+      const messagePayload = {
+        requestId,
+        userId: plot.userId,
+        slot: plot.slot,
+        type: plot.type,
+        email: plot.email,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await producer.send({
+          topic: config.kafka.maturityTopic,
+          messages: [
+            {
+              key: requestId,
+              value: JSON.stringify(messagePayload)
+            }
+          ]
+        });
+
+        logInfo('Уведомление о созревании поставлено в очередь', {
+          event: 'garden.maturity.produced',
+          topic: config.kafka.maturityTopic,
+          requestId,
+          userId: plot.userId,
+          slot: plot.slot,
+          type: plot.type
+        });
+        return true;
+      } catch (error) {
+        logError('Не удалось отправить уведомление в Kafka, используем прямую доставку', {
+          event: 'garden.maturity.kafka_send_failed',
+          topic: config.kafka.maturityTopic,
+          requestId,
+          userId: plot.userId,
+          slot: plot.slot,
+          type: plot.type,
+          error: error.message
+        });
+      }
+    } else {
+      logError('Kafka producer недоступен, переходим на прямую отправку уведомления', {
+        event: 'garden.maturity.kafka_unavailable',
+        userId: plot.userId,
+        slot: plot.slot,
+        type: plot.type,
+        requestId
+      });
+    }
+  } else {
+    logInfo('Kafka отключена, maturity-уведомление будет отправлено напрямую', {
       event: 'garden.maturity.kafka_disabled',
       userId: plot.userId,
       slot: plot.slot,
-      type: plot.type
+      type: plot.type,
+      requestId
     });
+  }
+
+  const delivered = await sendMaturityEmail({ ...plot, requestId });
+  if (!delivered) {
     return false;
   }
 
-  const producer = await getProducer();
-  if (!producer) {
-    logError('Kafka producer недоступен, уведомление не отправлено в очередь', {
-      event: 'garden.maturity.kafka_unavailable',
-      userId: plot.userId,
-      slot: plot.slot,
-      type: plot.type
-    });
-    return false;
-  }
-
-  const requestId = randomUUID();
-  const messagePayload = {
-    requestId,
-    userId: plot.userId,
-    slot: plot.slot,
-    type: plot.type,
-    email: plot.email,
-    createdAt: new Date().toISOString()
-  };
-
-  await producer.send({
-    topic: config.kafka.maturityTopic,
-    messages: [
-      {
-        key: requestId,
-        value: JSON.stringify(messagePayload)
-      }
-    ]
-  });
-
-  logInfo('Уведомление о созревании поставлено в очередь', {
-    event: 'garden.maturity.produced',
-    topic: config.kafka.maturityTopic,
+  logInfo('Уведомление о созревании отправлено напрямую', {
+    event: 'garden.maturity.direct_sent',
     requestId,
     userId: plot.userId,
     slot: plot.slot,
@@ -129,20 +157,14 @@ export function startMaturityNotifier() {
     return null;
   }
 
-  if (!kafkaAvailable()) {
-    logInfo('Kafka disabled, maturity notifier not started', {
-      event: 'garden.maturity.notifier.kafka_disabled'
-    });
-    return null;
-  }
-
   if (timer) {
     return timer;
   }
 
   logInfo('Starting maturity notifier', {
     event: 'garden.maturity.notifier.start',
-    intervalMs: config.scheduler.maturityCheckIntervalMs
+    intervalMs: config.scheduler.maturityCheckIntervalMs,
+    kafkaEnabled: kafkaAvailable()
   });
 
   scheduleNextRun(0);
