@@ -4,6 +4,8 @@ import { ServiceUnavailableError } from '../utils/errors.js';
 import { createConsumer, kafkaAvailable, releaseConsumer } from '../utils/message-broker.js';
 import { sendMaturityEmail } from './maturity.js';
 
+let consumerInstance;
+
 function parseMaturityMessage(message) {
   if (!message.value) {
     throw new Error('Сообщение без данных');
@@ -29,6 +31,38 @@ function parseMaturityMessage(message) {
     type: payload.type,
     email: payload.email,
     requestId: payload.requestId || requestId
+  };
+}
+
+function createMaturityHandler(onProcessed) {
+  return async ({ topic, partition, message }) => {
+    try {
+      const payload = parseMaturityMessage(message);
+
+      const delivered = await sendMaturityEmail(payload);
+      if (delivered && onProcessed) {
+        onProcessed();
+      }
+
+      logInfo('Сообщение об урожае обработано', {
+        event: 'garden.maturity.consumed',
+        topic,
+        partition,
+        offset: message.offset,
+        userId: payload.userId,
+        slot: payload.slot,
+        type: payload.type,
+        requestId: payload.requestId
+      });
+    } catch (error) {
+      logError('Ошибка при обработке сообщения созревания', {
+        event: 'garden.maturity.consume_failed',
+        topic,
+        partition,
+        offset: message.offset,
+        error: error.message
+      });
+    }
   };
 }
 
@@ -63,39 +97,12 @@ export async function consumeMaturityNotifications({ limit = 10, timeoutMs = 200
 
   await consumer.subscribe({ topic: config.kafka.maturityTopic, fromBeginning: false });
   await consumer.run({
-    eachMessage: async ({ topic, partition, message }) => {
-      try {
-        const payload = parseMaturityMessage(message);
-
-        const delivered = await sendMaturityEmail(payload);
-        if (delivered) {
-          processed += 1;
-        }
-
-        logInfo('Сообщение об урожае обработано', {
-          event: 'garden.maturity.consumed',
-          topic,
-          partition,
-          offset: message.offset,
-          userId: payload.userId,
-          slot: payload.slot,
-          type: payload.type,
-          requestId: payload.requestId
-        });
-
-        if (processed >= limit) {
-          await stopConsumer();
-        }
-      } catch (error) {
-        logError('Ошибка при обработке сообщения созревания', {
-          event: 'garden.maturity.consume_failed',
-          topic,
-          partition,
-          offset: message.offset,
-          error: error.message
-        });
+    eachMessage: createMaturityHandler(async () => {
+      processed += 1;
+      if (processed >= limit) {
+        await stopConsumer();
       }
-    }
+    })
   });
 
   if (timer) {
@@ -106,4 +113,57 @@ export async function consumeMaturityNotifications({ limit = 10, timeoutMs = 200
   releaseConsumer(consumer);
 
   return processed;
+}
+
+export async function startMaturityConsumer() {
+  if (!config.email.enabled) {
+    logInfo('Email уведомления отключены, consumer созревания не запущен', {
+      event: 'garden.maturity.consumer.email_disabled'
+    });
+    return null;
+  }
+
+  if (!kafkaAvailable()) {
+    logInfo('Kafka отключена, consumer созревания не запущен', {
+      event: 'garden.maturity.consumer.disabled'
+    });
+    return null;
+  }
+
+  if (consumerInstance) {
+    return consumerInstance;
+  }
+
+  const consumer = await createConsumer(config.kafka.maturityConsumerGroup);
+  if (!consumer) {
+    throw new Error('Не удалось инициализировать consumer уведомлений о созревании');
+  }
+
+  await consumer.subscribe({ topic: config.kafka.maturityTopic, fromBeginning: false });
+  await consumer.run({ eachMessage: createMaturityHandler() });
+
+  logInfo('Consumer созревания запущен', {
+    event: 'garden.maturity.consumer.started',
+    topic: config.kafka.maturityTopic,
+    groupId: config.kafka.maturityConsumerGroup
+  });
+
+  consumerInstance = consumer;
+  return consumerInstance;
+}
+
+export async function stopMaturityConsumer() {
+  if (!consumerInstance) {
+    return;
+  }
+
+  try {
+    await consumerInstance.stop();
+  } catch (error) {
+    logError('Не удалось остановить consumer уведомлений о созревании', {
+      event: 'garden.maturity.consumer.stop_failed',
+      error: error.message,
+      stack: error.stack
+    });
+  }
 }
