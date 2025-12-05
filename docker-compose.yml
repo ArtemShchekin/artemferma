@@ -123,7 +123,7 @@ services:
       EMAIL_HOST: mailhog
       EMAIL_PORT: "1025"
       EMAIL_SECURE: "false"
-      EMAIL_FROM: "Письмо от Фермы Артёма!>"
+      EMAIL_FROM: "Письмо от <ferma@mail.ru>"
     depends_on:
       mysql:
         condition: service_healthy
