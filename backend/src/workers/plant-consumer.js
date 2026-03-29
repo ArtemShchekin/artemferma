@@ -3,8 +3,33 @@ import { logError, logInfo } from '../logging/index.js';
 import { plantSeed } from '../services/garden.js';
 import { createConsumer, kafkaAvailable } from '../utils/message-broker.js';
 import { ValidationError, ConflictError } from '../utils/errors.js';
+import { getPool } from '../db/pool.js';
 
 let consumerInstance;
+
+// Функция для обновления статуса посадки в хранилище
+async function updatePlantStatus(requestId, status) {
+  try {
+    // В production здесь应该 быть Redis или база данных
+    // Для простоты используем глобальный объект в памяти
+    const plantRequests = global.plantRequests || new Map();
+    
+    if (plantRequests.has(requestId)) {
+      const existing = plantRequests.get(requestId);
+      plantRequests.set(requestId, {
+        ...existing,
+        status,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    logError('Не удалось обновить статус посадки', {
+      event: 'garden.plant.status_update_failed',
+      requestId,
+      error: error.message
+    });
+  }
+}
 
 function parsePlantingMessage(message) {
   if (!message.value) {
@@ -57,11 +82,17 @@ async function handlePlantingMessage(context) {
   });
 
   try {
+    // Обновляем статус на "processing"
+    await updatePlantStatus(payload.requestId, 'processing');
+    
     const result = await plantSeed({
       userId: payload.userId,
       slot: payload.slot,
       inventoryId: payload.inventoryId
     });
+
+    // Обновляем статус на "completed"
+    await updatePlantStatus(payload.requestId, 'completed');
 
     logInfo('Задача посадки обработана', {
       event: 'garden.plant.processed',
@@ -75,6 +106,10 @@ async function handlePlantingMessage(context) {
     });
   } catch (error) {
     const knownError = error instanceof ValidationError || error instanceof ConflictError;
+    
+    // Обновляем статус на "failed" при ошибке
+    await updatePlantStatus(payload.requestId, 'failed');
+    
     logError('Ошибка при обработке задачи посадки', {
       event: 'garden.plant.failed',
       topic,
