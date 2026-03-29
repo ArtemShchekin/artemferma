@@ -1,16 +1,24 @@
-# Database migrations
-*.sql
-
-# Dependencies
-node_modules/
-venv/
-.venv/
+# Compiled and build artifacts
+*.pyc
 __pycache__/
-
-# Build artifacts
+*.o
+*.obj
 dist/
 build/
 target/
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+.julia/
+zig-cache/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
 
 # Environment
 .env
@@ -23,13 +31,7 @@ target/
 *.swp
 *.swo
 
-# Logs
-*.log
-
-# Temp files
-*.tmp
-
-# OS
+# System
 .DS_Store
 Thumbs.db
 
@@ -37,27 +39,6 @@ Thumbs.db
 coverage/
 htmlcov/
 .coverage
-
-# Python specific
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg-info/
-
-# JavaScript/Node specific
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Compiled binary files
-*.exe
-*.dll
-*.so
-*.a
-*.o
-*.out
 
 # Compressed files
 *.zip
@@ -82,12 +63,3 @@ yarn-error.log*
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# Gradle
-.gradle/
-
-# MyPy
-.mypy_cache/
-
-# Pytest
-.pytest_cache/
