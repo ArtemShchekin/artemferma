@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getPool, withTransaction } from '../db/pool.js';
-import { ConflictError, NotFoundError, RequiredFieldError, ValidationError } from '../utils/errors.js';
+import { ConflictError, NotFoundError, RequiredFieldError, ValidationError, UnprocessableEntityError } from '../utils/errors.js';
 import { logApiRequest, logApiResponse } from '../logging/index.js';
 
 const router = Router();
 
 const ROTTEN_THRESHOLD_SQL = 'DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)';
+const INVENTORY_LIMIT = 20;
 
 async function markRottenVegetables(connection, userId, inventoryId = null) {
   let query =
@@ -21,6 +22,14 @@ async function markRottenVegetables(connection, userId, inventoryId = null) {
   }
 
   await connection.query(query, params);
+}
+
+async function getVegCount(connection, userId) {
+  const [[result]] = await connection.query(
+    "SELECT COUNT(*) as count FROM inventory WHERE user_id = ? AND kind IN ('veg_raw', 'veg_washed') AND is_rotten = 0",
+    [userId]
+  );
+  return result.count;
 }
 
 function normalizeInventoryRow(row) {
