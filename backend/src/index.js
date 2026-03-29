@@ -5,6 +5,7 @@ import { logError, logShutdown, logStartup } from './logging/index.js';
 import { disconnectKafka } from './utils/message-broker.js';
 import { startPlantConsumer, stopPlantConsumer } from './workers/plant-consumer.js';
 import { startMaturityNotifier, stopMaturityNotifier } from './workers/maturity-notifier.js';
+import { startMaturityConsumer, stopMaturityConsumer } from './services/maturity-consumer.js';
 
 async function bootstrap() {
   await ensureDatabaseConnection();
@@ -13,6 +14,17 @@ async function bootstrap() {
   } catch (error) {
     logError('Failed to start plant consumer', {
       event: 'startup.consumer_failed',
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
+
+  try {
+    await startMaturityConsumer();
+  } catch (error) {
+    logError('Failed to start maturity consumer', {
+      event: 'startup.maturity_consumer_failed',
       error: error.message,
       stack: error.stack
     });
@@ -53,6 +65,16 @@ async function bootstrap() {
     } catch (error) {
       logError('Failed to stop maturity notifier during shutdown', {
         event: 'shutdown.maturity_notifier_error',
+        error: error.message,
+        stack: error.stack
+      });
+    }
+
+    try {
+      await stopMaturityConsumer();
+    } catch (error) {
+      logError('Failed to stop maturity consumer during shutdown', {
+        event: 'shutdown.maturity_consumer_error',
         error: error.message,
         stack: error.stack
       });
