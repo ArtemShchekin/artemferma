@@ -119,12 +119,19 @@ services:
       KAFKA_CLIENT_ID: ferm-backend
       KAFKA_CONSUMER_GROUP: ferm-plant-consumers
       KAFKA_PLANT_TOPIC: ferm.garden.plant
+      EMAIL_ENABLED: "true"
+      EMAIL_HOST: mailhog
+      EMAIL_PORT: "1025"
+      EMAIL_SECURE: "false"
+      EMAIL_FROM: "Письмо от <ferma@mail.ru>"
     depends_on:
       mysql:
         condition: service_healthy
       opensearch:
         condition: service_healthy
       kafka:
+        condition: service_started
+      mailhog:
         condition: service_started
     ports:
       - "3000:3000"
@@ -136,6 +143,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: ferm-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   frontend:
     build: ./frontend

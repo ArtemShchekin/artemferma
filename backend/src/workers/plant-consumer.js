@@ -105,8 +105,15 @@ export async function startPlantConsumer() {
   }
 
   await consumer.subscribe({ topic: config.kafka.plantTopic, fromBeginning: false });
-  await consumer.run({
+
+  consumer.run({
     eachMessage: async (context) => handlePlantingMessage(context)
+  }).catch((error) => {
+    logError('Consumer посадки остановился с ошибкой', {
+      event: 'garden.plant.consumer.crashed',
+      error: error.message,
+      stack: error.stack
+    });
   });
 
   logInfo('Consumer посадки запущен', {

@@ -65,6 +65,10 @@ export async function createConsumer(groupId = config.kafka.consumerGroup) {
   return consumer;
 }
 
+export function releaseConsumer(consumer) {
+  consumers.delete(consumer);
+}
+
 export async function disconnectKafka() {
   if (producer) {
     try {
