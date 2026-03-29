@@ -1,38 +1,59 @@
-# Build artifacts
-dist/
-build/
-*.pyc
-__pycache__/
-
-# Dependencies
+# Зависимости
 node_modules/
 venv/
 .venv/
+
+# Артефакты сборки
+dist/
+build/
+target/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py.class
+.Python
+.python-version
+.pytest_cache/
+.mypy_cache/
+
+# Переменные окружения
 .env
 .env.local
+.ENV
+*.env.*
 
-# Editors
+# IDE и редакторы кода
 .vscode/
 .idea/
-
-# Logs and temp files
-*.log
-*.tmp
 *.swp
+*.swo
+*.tmp
 
-# System files
+# Логи
+*.log
+
+# Системные файлы ОС
 .DS_Store
 Thumbs.db
 
-# Coverage
+# Тестирование и покрытие кода
+.coverage
 coverage/
 htmlcov/
-.coverage
+.nyc_output/
+coverage.xml
 
-# Compressed files
+# Архивы
 *.zip
-*.gz
 *.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.gz
 *.tgz
 *.bz2
 *.xz
@@ -48,7 +69,3 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst

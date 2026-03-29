@@ -1,0 +1,202 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" xmlns="http://www.w3.org/2000/svg">
+  <!-- DESIGN SYSTEM SPECIFICATION -->
+  <!-- Farm Game UI Design System for Figma Import -->
+  
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Comic+Sans+MS:wght@400;700&amp;display=swap');
+      .title { font-family: 'Comic Sans MS', cursive; font-size: 24px; font-weight: 700; fill: #7a4f2c; }
+      .label { font-family: 'Comic Sans MS', cursive; font-size: 16px; font-weight: 700; fill: #7a4f2c; }
+      .body { font-family: 'Comic Sans MS', cursive; font-size: 14px; fill: #5d4037; }
+      .money { font-family: 'Comic Sans MS', cursive; font-size: 14px; font-weight: 800; fill: #1b5e20; }
+      .error { font-family: 'Comic Sans MS', cursive; font-size: 12px; font-weight: 700; fill: #e84c3d; }
+    </style>
+  </defs>
+  
+  <!-- BACKGROUND -->
+  <rect width="1200" height="1600" fill="#f7f2ef"/>
+  
+  <!-- TITLE -->
+  <text x="40" y="50" class="title">DESIGN SYSTEM — FARM GAME</text>
+  
+  <!-- COLOR PALETTE -->
+  <g transform="translate(40, 80)">
+    <text x="0" y="0" class="label">COLOR PALETTE</text>
+    
+    <!-- Primary Green -->
+    <rect x="0" y="20" width="120" height="60" fill="#7BC26B" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="60" y="95" class="body" text-anchor="middle">#7BC26B</text>
+    <text x="60" y="110" class="body" text-anchor="middle">Primary Green</text>
+    
+    <!-- Brown -->
+    <rect x="140" y="20" width="120" height="60" fill="#7a4f2c" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="200" y="95" class="body" text-anchor="middle">#7a4f2c</text>
+    <text x="200" y="110" class="body" text-anchor="middle">Brown</text>
+    
+    <!-- Yellow -->
+    <rect x="280" y="20" width="120" height="60" fill="#ffd66b" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="340" y="95" class="body" text-anchor="middle">#ffd66b</text>
+    <text x="340" y="110" class="body" text-anchor="middle">Yellow</text>
+    
+    <!-- Sky Blue -->
+    <rect x="420" y="20" width="120" height="60" fill="#b3e5ff" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="480" y="95" class="body" text-anchor="middle">#b3e5ff</text>
+    <text x="480" y="110" class="body" text-anchor="middle">Sky Blue</text>
+    
+    <!-- Red -->
+    <rect x="560" y="20" width="120" height="60" fill="#e84c3d" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="620" y="95" class="body" text-anchor="middle">#e84c3d</text>
+    <text x="620" y="110" class="body" text-anchor="middle">Red (Danger)</text>
+    
+    <!-- Background -->
+    <rect x="700" y="20" width="120" height="60" fill="#f7f2ef" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="760" y="95" class="body" text-anchor="middle">#f7f2ef</text>
+    <text x="760" y="110" class="body" text-anchor="middle">Background</text>
+    
+    <!-- Money Green -->
+    <rect x="840" y="20" width="120" height="60" fill="#1b5e20" stroke="#7a4f2c" stroke-width="2" rx="8"/>
+    <text x="900" y="95" class="body" text-anchor="middle">#1b5e20</text>
+    <text x="900" y="110" class="body" text-anchor="middle">Money Text</text>
+  </g>
+  
+  <!-- TYPOGRAPHY -->
+  <g transform="translate(40, 220)">
+    <text x="0" y="0" class="label">TYPOGRAPHY</text>
+    <text x="0" y="30" class="body">Font Family: Comic Sans MS (fallback: system-ui)</text>
+    
+    <text x="0" y="70" class="title" font-size="32">Title — 24px Bold</text>
+    <text x="0" y="110" class="label" font-size="20">Heading — 20px Bold</text>
+    <text x="0" y="150" class="label">Label — 16px Bold</text>
+    <text x="0" y="185" class="body">Body — 14px Regular</text>
+    <text x="0" y="215" class="body" font-size="12">Small — 12px Regular</text>
+    
+    <text x="0" y="250" class="money">Money — 14px ExtraBold (#1b5e20)</text>
+    <text x="0" y="280" class="error">Error — 12px Bold (#e84c3d)</text>
+  </g>
+  
+  <!-- SPACING & BORDER RADIUS -->
+  <g transform="translate(40, 520)">
+    <text x="0" y="0" class="label">SPACING &amp; BORDER RADIUS</text>
+    
+    <text x="0" y="40" class="body">Gap (small): 8px</text>
+    <text x="0" y="65" class="body">Gap (medium): 12px</text>
+    <text x="0" y="90" class="body">Gap (large): 16px</text>
+    <text x="0" y="115" class="body">Padding (card): 16px</text>
+    <text x="0" y="140" class="body">Padding (button): 8px 12px</text>
+    
+    <text x="0" y="180" class="body">Border Radius (button): 12px</text>
+    <text x="0" y="205" class="body">Border Radius (card): 16px</text>
+    <text x="0" y="230" class="body">Border Radius (badge/tab): 999px (pill)</text>
+    <text x="0" y="255" class="body">Border Width: 2px</text>
+    <text x="0" y="280" class="body">Box Shadow: 0 4px 0 var(--brown) / 0 6px 0 var(--brown)</text>
+  </g>
+  
+  <!-- COMPONENTS PREVIEW -->
+  <g transform="translate(40, 820)">
+    <text x="0" y="0" class="label">COMPONENTS</text>
+    
+    <!-- Button Primary -->
+    <g transform="translate(0, 30)">
+      <rect x="0" y="0" width="140" height="44" fill="#7BC26B" stroke="#7a4f2c" stroke-width="2" rx="12"/>
+      <rect x="0" y="40" width="140" height="4" fill="#7a4f2c" rx="2"/>
+      <text x="70" y="28" class="label" text-anchor="middle" fill="#7a4f2c">Buy</text>
+      <text x="70" y="65" class="body" text-anchor="middle">Button Primary</text>
+      <text x="70" y="80" class="body" text-anchor="middle" font-size="11">bg: #7BC26B, shadow: 0 4px 0</text>
+    </g>
+    
+    <!-- Button Danger -->
+    <g transform="translate(160, 30)">
+      <rect x="0" y="0" width="140" height="44" fill="#e84c3d" stroke="#7a4f2c" stroke-width="2" rx="12"/>
+      <rect x="0" y="40" width="140" height="4" fill="#7a4f2c" rx="2"/>
+      <text x="70" y="28" class="label" text-anchor="middle" fill="#fff">Delete</text>
+      <text x="70" y="65" class="body" text-anchor="middle">Button Danger</text>
+      <text x="70" y="80" class="body" text-anchor="middle" font-size="11">bg: #e84c3d, text: #fff</text>
+    </g>
+    
+    <!-- Button Secondary -->
+    <g transform="translate(320, 30)">
+      <rect x="0" y="0" width="140" height="44" fill="#ffffff" stroke="#7a4f2c" stroke-width="2" rx="12"/>
+      <rect x="0" y="40" width="140" height="4" fill="#7a4f2c" rx="2"/>
+      <text x="70" y="28" class="label" text-anchor="middle" fill="#7a4f2c">Cancel</text>
+      <text x="70" y="65" class="body" text-anchor="middle">Button Secondary</text>
+      <text x="70" y="80" class="body" text-anchor="middle" font-size="11">bg: #fff</text>
+    </g>
+    
+    <!-- Tab Inactive -->
+    <g transform="translate(0, 140)">
+      <rect x="0" y="0" width="160" height="44" fill="#ffd66b" stroke="#7a4f2c" stroke-width="2" rx="999"/>
+      <rect x="0" y="40" width="160" height="4" fill="#7a4f2c" rx="2"/>
+      <circle cx="30" cy="22" r="10" fill="#7a4f2c"/>
+      <text x="55" y="27" class="label" fill="#7a4f2c">Tab Label</text>
+      <text x="80" y="65" class="body" text-anchor="middle">Tab (Inactive)</text>
+    </g>
+    
+    <!-- Tab Active -->
+    <g transform="translate(180, 140)">
+      <rect x="0" y="0" width="160" height="44" fill="#ffffff" stroke="#7a4f2c" stroke-width="2" rx="999"/>
+      <circle cx="30" cy="22" r="10" fill="#7a4f2c"/>
+      <text x="55" y="27" class="label" fill="#7a4f2c">Tab Label</text>
+      <text x="80" y="65" class="body" text-anchor="middle">Tab (Active)</text>
+    </g>
+    
+    <!-- Badge -->
+    <g transform="translate(360, 140)">
+      <rect x="0" y="8" width="120" height="28" fill="#ffffff" stroke="#7a4f2c" stroke-width="2" rx="999"/>
+      <text x="60" y="27" class="body" text-anchor="middle">Badge Text</text>
+      <text x="60" y="65" class="body" text-anchor="middle">Badge</text>
+    </g>
+    
+    <!-- Card -->
+    <g transform="translate(0, 240)">
+      <rect x="0" y="0" width="300" height="100" fill="rgba(255,255,255,0.88)" stroke="#7a4f2c" stroke-width="2" rx="16"/>
+      <rect x="0" y="96" width="300" height="6" fill="#7a4f2c" rx="3"/>
+      <text x="20" y="35" class="label">Card Title</text>
+      <text x="20" y="60" class="body">Card content goes here...</text>
+      <text x="150" y="130" class="body" text-anchor="middle">Card Component</text>
+      <text x="150" y="145" class="body" text-anchor="middle" font-size="11">bg: rgba(255,255,255,0.88), shadow: 0 6px 0</text>
+    </g>
+    
+    <!-- Input Field -->
+    <g transform="translate(320, 240)">
+      <text x="0" y="0" class="label">Label</text>
+      <rect x="0" y="10" width="200" height="44" fill="#ffffff" stroke="#7a4f2c" stroke-width="2" rx="10"/>
+      <text x="10" y="38" class="body" fill="#5d4037">Placeholder...</text>
+      <text x="100" y="75" class="body" text-anchor="middle">Input Field</text>
+    </g>
+    
+    <!-- Shop Item -->
+    <g transform="translate(0, 380)">
+      <rect x="0" y="0" width="340" height="60" fill="#ffffff" stroke="#7a4f2c" stroke-width="2" stroke-dasharray="4,4" rx="12"/>
+      <circle cx="40" cy="30" r="18" fill="#ffd66b"/>
+      <text x="75" y="35" class="body">Item Name</text>
+      <rect x="220" y="8" width="100" height="44" fill="#7BC26B" stroke="#7a4f2c" stroke-width="2" rx="12"/>
+      <text x="270" y="35" class="label" text-anchor="middle" fill="#7a4f2c">Buy</text>
+      <text x="170" y="85" class="body" text-anchor="middle">Shop Item Row</text>
+    </g>
+    
+    <!-- Slot (Empty Garden Plot) -->
+    <g transform="translate(0, 480)">
+      <rect x="0" y="0" width="200" height="140" fill="#e6ffb0" stroke="#7a4f2c" stroke-width="2" stroke-dasharray="4,4" rx="12"/>
+      <text x="100" y="65" class="body" text-anchor="middle">Empty Plot #1</text>
+      <rect x="50" y="80" width="100" height="40" fill="#7BC26B" stroke="#7a4f2c" stroke-width="2" rx="12"/>
+      <text x="100" y="105" class="label" text-anchor="middle" fill="#7a4f2c">Plant</text>
+      <text x="100" y="160" class="body" text-anchor="middle">Garden Slot</text>
+    </g>
+  </g>
+  
+  <!-- LAYOUT GRID INFO -->
+  <g transform="translate(40, 1400)">
+    <text x="0" y="0" class="label">LAYOUT &amp; GRID</text>
+    <text x="0" y="30" class="body">Main Container Padding: 20px (mobile: 16px)</text>
+    <text x="0" y="55" class="body">Grid Gap: 16px</text>
+    <text x="0" y="80" class="body">Grid Columns: 1fr / repeat(2, 1fr) / repeat(3, 1fr)</text>
+    <text x="0" y="105" class="body">Header Height: auto (padding: 12px 20px)</text>
+    <text x="0" y="130" class="body">Tabs Bar: flex-wrap, gap: 8px, padding: 10px 20px</text>
+    <text x="0" y="155" class="body">Responsive Breakpoint: 739px</text>
+  </g>
+  
+  <!-- NOTES -->
+  <g transform="translate(40, 1540)">
+    <text x="0" y="0" class="body" font-size="12">Note: All shadows are solid color (no blur). Icons: 18x18px (buttons), 36x36px (shop items).</text>
+  </g>
+</svg>
